@@ -1,74 +1,127 @@
+// src/pages/MyAppointments.tsx
 import { useEffect, useState } from "react";
 import api from "../lib/api";
-import { supabase } from "../lib/supabase";
-
-type Appt = {
-  id: string;
-  starts_at: string;
-  ends_at: string;
-  status: string;
-  services?: { name: string };
-};
+import RescheduleDialog, {
+  type ApptLite,
+} from "../components/RescheduleDialog";
 
 export default function MyAppointments() {
-  const [items, setItems] = useState<Appt[]>([]);
+  const [upcoming, setUpcoming] = useState<ApptLite[]>([]);
+  const [history, setHistory] = useState<ApptLite[]>([]);
   const [msg, setMsg] = useState("");
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState<ApptLite | null>(null);
+
+  const load = () => {
+    setMsg("");
+    Promise.all([
+      api.get("/calendar/appointments?range=upcoming&status=scheduled"),
+      api.get("/calendar/appointments?range=past&status=all"),
+    ])
+      .then(([u, h]) => {
+        setUpcoming(u.data.data || []);
+        setHistory(h.data.data || []);
+      })
+      .catch((e) =>
+        setMsg(e?.response?.data?.error || "No se pudo cargar tus citas")
+      );
+  };
 
   useEffect(() => {
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (!userId) return;
-      const q = new URLSearchParams({ scope: "mine", userId }).toString();
-      const r = await api.get(`/calendar/appointments?${q}`);
-      setItems(r.data.data || []);
-    })();
+    load();
   }, []);
 
-  const cancel = async (id: string) => {
+  const onCancel = async (id: string) => {
     setMsg("");
     try {
-      await api.patch(`/calendar/appointments/${id}/cancel`);
-      setItems((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, status: "cancelled" } : x))
-      );
+      const r = await api.patch(`/calendar/appointments/${id}/cancel`, {});
+      if (r.data?.suspended_until) {
+        alert(
+          `Has sido suspendido hasta: ${new Date(
+            r.data.suspended_until
+          ).toLocaleString()}`
+        );
+      }
+      load();
     } catch (e: any) {
       setMsg(e?.response?.data?.error || e.message);
     }
   };
 
+  const onOpenReschedule = (appt: ApptLite) => {
+    setCurrent(appt);
+    setOpen(true);
+  };
+
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-3">Mis citas</h2>
-      {items.length === 0 && <p className="text-sm">No tienes citas.</p>}
-      <ul className="space-y-2">
-        {items.map((a) => (
-          <li
-            key={a.id}
-            className="border rounded p-3 flex items-center justify-between"
-          >
-            <div>
-              <div className="font-medium">
-                {a.services?.name || "Servicio"}
+    <div className="space-y-8">
+      <h1 className="text-lg font-semibold">Mis citas</h1>
+
+      <section className="space-y-3">
+        <h2 className="font-medium">Próximas</h2>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-zinc-600">No tienes citas próximas.</p>
+        ) : (
+          upcoming.map((a) => (
+            <div
+              key={a.id}
+              className="rounded-xl border p-3 bg-white flex items-center justify-between"
+            >
+              <div>
+                <div className="font-medium">
+                  {a.service?.name ?? "Servicio"} ·{" "}
+                  {a.specialist?.display_name ?? "Especialista"}
+                </div>
+                <div className="text-sm text-zinc-600">
+                  {new Date(a.starts_at).toLocaleString()}
+                </div>
               </div>
-              <div className="text-sm text-zinc-600">
-                {new Date(a.starts_at).toLocaleString()} · {a.status}
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-2 border rounded-xl"
+                  onClick={() => onOpenReschedule(a)}
+                >
+                  Re-agendar
+                </button>
+                <button
+                  className="px-3 py-2 border rounded-xl"
+                  onClick={() => onCancel(a.id)}
+                >
+                  Cancelar
+                </button>
               </div>
             </div>
-            {a.status !== "cancelled" && (
-              <button
-                onClick={() => cancel(a.id)}
-                className="px-3 py-1 border rounded"
-              >
-                Cancelar
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-      {msg && <p className="text-sm text-red-600 mt-2">{msg}</p>}
+          ))
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-medium">Historial</h2>
+        {history.length === 0 ? (
+          <p className="text-sm text-zinc-600">Aún no hay historial.</p>
+        ) : (
+          history.map((a) => (
+            <div key={a.id} className="rounded-xl border p-3 bg-white">
+              <div className="font-medium">
+                {a.service?.name ?? "Servicio"} ·{" "}
+                {a.specialist?.display_name ?? "Especialista"}
+              </div>
+              <div className="text-sm text-zinc-600">
+                {new Date(a.starts_at).toLocaleString()} — {String(a.status)}
+              </div>
+            </div>
+          ))
+        )}
+      </section>
+
+      {!!msg && <p className="text-sm text-red-600">{msg}</p>}
+
+      <RescheduleDialog
+        open={open}
+        appt={current}
+        onClose={() => setOpen(false)}
+        onRescheduled={load}
+      />
     </div>
   );
 }
