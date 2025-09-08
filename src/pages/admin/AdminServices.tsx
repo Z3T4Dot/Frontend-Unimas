@@ -447,20 +447,24 @@ function SubtypesEditor({
     if (!canSave) return;
     setSaving(true);
     setErr("");
+
     try {
-      // upsert bulk
+      const payload = rows.map((r) => ({
+        id: r.id && String(r.id).trim() ? String(r.id) : undefined,
+        name: r.name.trim(),
+        duration_min: Number(r.duration_min),
+        price: Number(r.price),
+      }));
+
       await api.post(`/admin/services/${service.id}/subtypes`, {
-        subtypes: rows.map((r) => ({
-          id: r.id ?? undefined,
-          name: r.name.trim(),
-          duration_min: Number(r.duration_min),
-          price: Number(r.price),
-        })),
+        subtypes: payload,
       });
-      // recarga final con ids
+
       const rr = await api.get(`/admin/services/${service.id}/subtypes`);
       const fresh: ServiceSubtype[] = rr.data?.data || [];
+
       onSaved(fresh);
+      setRows(fresh);
     } catch (e: any) {
       setErr(e?.response?.data?.error || "No se pudieron guardar los subtipos");
     } finally {
