@@ -1,22 +1,43 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { NavLink, useLocation, useNavigate } from "react-router-dom"
-import { useEffect, useMemo, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Calendar, Users, BookOpen, User, Settings, LogOut, Shield, Wrench } from "lucide-react"
-import { clearAuth, getUser, homeByRole, onAuthChange } from "../lib/auth"
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar,
+  Users,
+  BookOpen,
+  User,
+  Settings,
+  LogOut,
+  Shield,
+  Wrench,
+  type LucideProps,
+} from "lucide-react";
+import { clearAuth, getUser, homeByRole, onAuthChange } from "../lib/auth";
+
+type IconType = React.ComponentType<
+  Partial<LucideProps> & { className?: string }
+>;
+
+type LinkItem = {
+  to: string;
+  label: string;
+  icon?: IconType;
+  end?: boolean; // ← opcional
+};
 
 // Icon mapping for navigation items
-const iconMap = {
+const iconMap: Record<string, IconType> = {
   Citas: Calendar,
   Clientes: Users,
   Agendar: BookOpen,
   "Mis citas": User,
   Admin: Settings,
   Ingresar: LogOut,
-}
+};
 
 function PremiumNavLink({
   to,
@@ -24,10 +45,10 @@ function PremiumNavLink({
   end,
   icon: Icon,
 }: {
-  to: string
-  label: string
-  end?: boolean
-  icon?: React.ComponentType<any>
+  to: string;
+  label: string;
+  end?: boolean;
+  icon?: React.ComponentType<any>;
 }) {
   return (
     <NavLink
@@ -70,7 +91,7 @@ function PremiumNavLink({
         </>
       )}
     </NavLink>
-  )
+  );
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -78,16 +99,17 @@ function RoleBadge({ role }: { role: string }) {
     admin: "bg-destructive/10 text-destructive border-destructive/20",
     tecnico: "bg-accent/10 text-accent border-accent/20",
     cliente: "bg-secondary/10 text-secondary border-secondary/20",
-  }
+  };
 
   const roleIcons = {
     admin: Shield,
     tecnico: Wrench,
     cliente: User,
-  }
+  };
 
-  const Icon = roleIcons[role as keyof typeof roleIcons] || User
-  const colorClass = badgeColors[role as keyof typeof badgeColors] || badgeColors.cliente
+  const Icon = roleIcons[role as keyof typeof roleIcons] || User;
+  const colorClass =
+    badgeColors[role as keyof typeof badgeColors] || badgeColors.cliente;
 
   return (
     <motion.div
@@ -102,71 +124,82 @@ function RoleBadge({ role }: { role: string }) {
       <Icon size={12} />
       <span className="capitalize">{role}</span>
     </motion.div>
-  )
+  );
 }
 
 export default function PremiumNavbar() {
-  const nav = useNavigate()
-  const loc = useLocation()
-  const [me, setMe] = useState(getUser())
-  const [isScrolled, setIsScrolled] = useState(false)
+  const nav = useNavigate();
+  const loc = useLocation();
+  const [me, setMe] = useState(getUser());
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const off = onAuthChange(setMe)
-    return off
-  }, [])
+    const off = onAuthChange(setMe);
+    return off;
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  const role = (me?.role || "").toLowerCase().trim()
-  const isAdmin = role === "admin"
-  const isTech = role === "tecnico" || isAdmin
+  const role = (me?.role || "").toLowerCase().trim();
+  const isAdmin = role === "admin";
+  const isTech = role === "tecnico" || isAdmin;
 
-  const techLinks = useMemo(
+  const techLinks = useMemo<LinkItem[]>(
     () => [
       { to: "/tech/appointments", label: "Citas", icon: iconMap["Citas"] },
-      { to: "/tech/clients", label: "Clientes", end: false as const, icon: iconMap["Clientes"] },
+      {
+        to: "/tech/clients",
+        label: "Clientes",
+        end: false,
+        icon: iconMap["Clientes"],
+      },
     ],
-    [],
-  )
+    []
+  );
 
-  const clientLinks = useMemo(
+  const clientLinks = useMemo<LinkItem[]>(
     () => [
       { to: "/book", label: "Agendar", icon: iconMap["Agendar"] },
       { to: "/me", label: "Mis citas", icon: iconMap["Mis citas"] },
     ],
-    [],
-  )
+    []
+  );
 
   const links = useMemo(() => {
-    if (!me) return [{ to: "/login", label: "Ingresar", icon: iconMap["Ingresar"] }]
+    if (!me)
+      return [{ to: "/login", label: "Ingresar", icon: iconMap["Ingresar"] }];
 
     if (isAdmin) {
-      const all = [...techLinks, { to: "/admin", label: "Admin", icon: iconMap["Admin"] }]
-      const seen = new Set<string>()
-      return all.filter((l) => (seen.has(l.to) ? false : (seen.add(l.to), true)))
+      const all = [
+        ...techLinks,
+        { to: "/admin", label: "Admin", icon: iconMap["Admin"] },
+      ];
+      const seen = new Set<string>();
+      return all.filter((l) =>
+        seen.has(l.to) ? false : (seen.add(l.to), true)
+      );
     }
 
-    if (isTech) return techLinks
-    return clientLinks
-  }, [me, isAdmin, isTech, techLinks, clientLinks])
+    if (isTech) return techLinks;
+    return clientLinks;
+  }, [me, isAdmin, isTech, techLinks, clientLinks]);
 
-  if (loc.pathname.startsWith("/login")) return null
+  if (loc.pathname.startsWith("/login")) return null;
 
   const logout = () => {
-    clearAuth()
-    nav("/login", { replace: true })
-  }
+    clearAuth();
+    nav("/login", { replace: true });
+  };
 
   const goHome = () => {
-    nav(homeByRole(role), { replace: true })
-  }
+    nav(homeByRole(role), { replace: true });
+  };
 
   return (
     <motion.header
@@ -209,7 +242,9 @@ export default function PremiumNavbar() {
               Unimas
             </motion.span>
 
-            <AnimatePresence>{me?.role && <RoleBadge role={role} />}</AnimatePresence>
+            <AnimatePresence>
+              {me?.role && <RoleBadge role={role} />}
+            </AnimatePresence>
           </div>
         </motion.button>
 
@@ -230,7 +265,12 @@ export default function PremiumNavbar() {
                   exit={{ opacity: 0, y: 10 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <PremiumNavLink to={link.to} label={link.label} end={link.end} icon={link.icon} />
+                  <PremiumNavLink
+                    to={link.to}
+                    label={link.label}
+                    end={link.end}
+                    icon={link.icon}
+                  />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -263,5 +303,5 @@ export default function PremiumNavbar() {
         </nav>
       </div>
     </motion.header>
-  )
+  );
 }

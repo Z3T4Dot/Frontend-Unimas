@@ -1,71 +1,67 @@
-"use client"
+"use client";
 
-import { Fragment } from "react"
-import { createPortal } from "react-dom"
-import { motion, AnimatePresence } from "framer-motion"
-import { X, Clock, DollarSign, Sparkles } from "lucide-react"
+import { Fragment } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { X, Clock, DollarSign, Sparkles } from "lucide-react";
 
 export type ServiceSubtype = {
-  id: string
-  name: string
-  duration_min: number
-  price: number
-}
+  id: string;
+  name: string;
+  duration_min: number;
+  price: number;
+};
 
 type Props = {
-  open: boolean
-  onClose: () => void
-  serviceName: string
-  subtypes: ServiceSubtype[]
-  onPick: (sub: ServiceSubtype) => void
-}
+  open: boolean;
+  onClose: () => void;
+  serviceName: string;
+  subtypes: ServiceSubtype[];
+  onPick: (sub: ServiceSubtype) => void;
+};
 
-export default function SubtypePickerModal({ open, onClose, serviceName, subtypes, onPick }: Props) {
-  if (!open) return null
+export default function SubtypePickerModal({
+  open,
+  onClose,
+  serviceName,
+  subtypes,
+  onPick,
+}: Props) {
+  if (!open) return null;
 
   const backdropVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
-  }
+  };
 
-  const modalVariants = {
-    hidden: {
-      opacity: 0,
-      scale: 0.8,
-      y: 50,
-    },
+  const modalVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.96, y: 12 },
     visible: {
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: {
-        type: "spring",
-        damping: 25,
-        stiffness: 300,
-      },
+      transition: { type: "spring", damping: 20, stiffness: 260 },
     },
     exit: {
       opacity: 0,
-      scale: 0.8,
-      y: 50,
-      transition: {
-        duration: 0.2,
-      },
+      scale: 0.96,
+      y: 12,
+      transition: { type: "spring", damping: 26, stiffness: 260 },
     },
-  }
+  };
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 8 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
       transition: {
-        delay: i * 0.1,
-        duration: 0.3,
-        ease: "easeOut",
+        delay: i * 0.04,
+        duration: 0.24,
+        ease: [0.16, 1, 0.3, 1], // ← no string suelto
       },
     }),
-  }
+  };
 
   const Modal = (
     <AnimatePresence>
@@ -94,8 +90,12 @@ export default function SubtypePickerModal({ open, onClose, serviceName, subtype
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-foreground">Elige tu subtipo</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{serviceName}</p>
+                  <h3 className="font-bold text-lg text-foreground">
+                    Elige tu subtipo
+                  </h3>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {serviceName}
+                  </p>
                 </div>
               </div>
 
@@ -117,11 +117,11 @@ export default function SubtypePickerModal({ open, onClose, serviceName, subtype
                 <motion.button
                   key={st.id}
                   onClick={() => {
-                    onPick(st)
-                    onClose()
+                    onPick(st);
+                    onClose();
                   }}
                   className="w-full text-left rounded-xl border border-border bg-card hover:bg-card/80 p-4 transition-all duration-200 group hover:shadow-lg hover:border-primary/30"
-                  variants={cardVariants}
+                  variants={itemVariants}
                   initial="hidden"
                   animate="visible"
                   custom={index}
@@ -149,7 +149,9 @@ export default function SubtypePickerModal({ open, onClose, serviceName, subtype
 
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">{st.duration_min} minutos</span>
+                    <span className="text-sm font-medium">
+                      {st.duration_min} minutos
+                    </span>
                   </div>
                 </motion.button>
               ))}
@@ -165,7 +167,7 @@ export default function SubtypePickerModal({ open, onClose, serviceName, subtype
         </motion.div>
       </div>
     </AnimatePresence>
-  )
+  );
 
-  return createPortal(<Fragment>{Modal}</Fragment>, document.body)
+  return createPortal(<Fragment>{Modal}</Fragment>, document.body);
 }

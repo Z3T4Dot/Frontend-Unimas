@@ -18,6 +18,16 @@ import RescheduleDialog, {
   type ApptLite,
 } from "../components/RescheduleDialog";
 
+type UIAppt = ApptLite & {
+  status?: "scheduled" | "completed" | "canceled" | "cancelled" | string;
+  specialist?: { display_name?: string | null } | null;
+  service?: {
+    name?: string | null;
+    duration_min?: number | null;
+    duration?: number | null; // por si el backend ya la aliasa así
+  } | null;
+};
+
 const statusConfig = {
   scheduled: {
     label: "Programada",
@@ -29,7 +39,13 @@ const statusConfig = {
     icon: CheckCircle,
     color: "bg-accent text-accent-foreground",
   },
+  canceled: {
+    label: "Cancelada",
+    icon: X,
+    color: "bg-destructive text-destructive-foreground",
+  },
   cancelled: {
+    // por si llega sin normalizar
     label: "Cancelada",
     icon: X,
     color: "bg-destructive text-destructive-foreground",
@@ -39,14 +55,14 @@ const statusConfig = {
     icon: RefreshCw,
     color: "bg-secondary text-secondary-foreground",
   },
-};
+} as const;
 
 export default function PremiumMyAppointments() {
-  const [upcoming, setUpcoming] = useState<ApptLite[]>([]);
-  const [history, setHistory] = useState<ApptLite[]>([]);
+  const [upcoming, setUpcoming] = useState<UIAppt[]>([]);
+  const [history, setHistory] = useState<UIAppt[]>([]);
   const [msg, setMsg] = useState("");
   const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState<ApptLite | null>(null);
+  const [current, setCurrent] = useState<UIAppt | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -58,8 +74,18 @@ export default function PremiumMyAppointments() {
         api.get("/calendar/appointments?range=upcoming&status=scheduled"),
         api.get("/calendar/appointments?range=past&status=all"),
       ]);
-      setUpcoming(u.data.data || []);
-      setHistory(h.data.data || []);
+
+      const norm = (arr: any[]): UIAppt[] =>
+        (arr ?? []).map((a) => ({
+          ...a,
+          specialist: a?.specialist ?? null,
+          service: a?.service ?? null,
+          // unificar cancelled -> canceled
+          status: a?.status === "cancelled" ? "canceled" : a?.status,
+        }));
+
+      setUpcoming(norm(u.data?.data || []));
+      setHistory(norm(h.data?.data || []));
     } catch (e: any) {
       setMsg(e?.response?.data?.error || "No se pudo cargar tus citas");
     } finally {
@@ -92,7 +118,8 @@ export default function PremiumMyAppointments() {
   };
 
   const onOpenReschedule = (appt: ApptLite) => {
-    setCurrent(appt);
+    // ApptLite es compatible con UIAppt (los campos extra son opcionales)
+    setCurrent(appt as UIAppt);
     setOpen(true);
   };
 
@@ -116,14 +143,19 @@ export default function PremiumMyAppointments() {
     appointment,
     showActions = false,
   }: {
-    appointment: ApptLite;
+    appointment: UIAppt;
     showActions?: boolean;
   }) => {
     const { date, time } = formatDate(appointment.starts_at);
-    const status =
-      statusConfig[appointment.status as keyof typeof statusConfig] ||
-      statusConfig.scheduled;
+    const statusKey =
+      (appointment.status as keyof typeof statusConfig) ?? "scheduled";
+    const status = statusConfig[statusKey] ?? statusConfig.scheduled;
     const StatusIcon = status.icon;
+
+    const duration =
+      appointment.service?.duration_min ??
+      appointment.service?.duration ??
+      null;
 
     return (
       <motion.div
@@ -166,9 +198,9 @@ export default function PremiumMyAppointments() {
               <h4 className="font-medium text-card-foreground mb-1">
                 {appointment.service?.name ?? "Servicio"}
               </h4>
-              {appointment.service?.duration && (
+              {duration != null && (
                 <p className="text-sm text-muted-foreground">
-                  Duración: {appointment.service.duration} minutos
+                  Duración: {duration} minutos
                 </p>
               )}
             </div>
