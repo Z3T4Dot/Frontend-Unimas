@@ -1,182 +1,250 @@
-import { useEffect, useMemo, useState } from "react";
-import api from "../lib/api";
-import { cn } from "../utils/ui";
+"use client"
 
-type SpecialistLite = { id: string; display_name: string };
-type ServiceLite = { id: string; name: string; image_url?: string };
+import { useEffect, useMemo, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Calendar, Clock, X, CheckCircle, AlertCircle } from "lucide-react"
+import api from "../lib/api"
+import { cn } from "../utils/ui"
+
+type SpecialistLite = { id: string; display_name: string }
+type ServiceLite = { id: string; name: string; image_url?: string }
 
 export type ApptLite = {
-  id: string;
-  starts_at: string;
-  duration_min: number;
-  specialist: SpecialistLite | null;
-  service: ServiceLite | null;
-};
-
-type Props = {
-  open: boolean;
-  appt: ApptLite | null;
-  onClose: () => void;
-  onRescheduled: () => void; // callback para refrescar lista
-};
-
-function yyyyMmDd(d: Date) {
-  // YYYY-MM-DD en UTC
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-    .toISOString()
-    .slice(0, 10);
+  id: string
+  starts_at: string
+  duration_min: number
+  specialist: SpecialistLite | null
+  service: ServiceLite | null
 }
 
-export default function RescheduleDialog({
-  open,
-  appt,
-  onClose,
-  onRescheduled,
-}: Props) {
-  const initDate = useMemo(() => {
-    if (!appt) return "";
-    return yyyyMmDd(new Date(appt.starts_at));
-  }, [appt]);
+type Props = {
+  open: boolean
+  appt: ApptLite | null
+  onClose: () => void
+  onRescheduled: () => void
+}
 
-  const [date, setDate] = useState<string>(initDate);
-  const [slots, setSlots] = useState<string[]>([]);
-  const [slot, setSlot] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
+function yyyyMmDd(d: Date) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString().slice(0, 10)
+}
+
+export default function RescheduleDialog({ open, appt, onClose, onRescheduled }: Props) {
+  const initDate = useMemo(() => {
+    if (!appt) return ""
+    return yyyyMmDd(new Date(appt.starts_at))
+  }, [appt])
+
+  const [date, setDate] = useState<string>(initDate)
+  const [slots, setSlots] = useState<string[]>([])
+  const [slot, setSlot] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState("")
 
   useEffect(() => {
-    if (!open) return;
-    setMsg("");
-    setSlot("");
-    setSlots([]);
-    setDate(initDate);
-  }, [open, initDate]);
+    if (!open) return
+    setMsg("")
+    setSlot("")
+    setSlots([])
+    setDate(initDate)
+  }, [open, initDate])
 
-  // Carga de disponibilidad
   useEffect(() => {
     const run = async () => {
-      setSlots([]);
-      setSlot("");
-      if (!open || !appt || !date || !appt.specialist?.id) return;
+      setSlots([])
+      setSlot("")
+      if (!open || !appt || !date || !appt.specialist?.id) return
 
       const params = new URLSearchParams({
         date,
         specialistId: appt.specialist.id,
-        // usamos la duración efectiva de la cita
         duration_min: String(appt.duration_min || 0),
-      }).toString();
+      }).toString()
 
       try {
-        const r = await api.get(`/calendar/availability?${params}`);
-        setSlots(r.data?.slots || []);
+        const r = await api.get(`/calendar/availability?${params}`)
+        setSlots(r.data?.slots || [])
       } catch (e: any) {
-        setSlots([]);
-        setMsg(
-          e?.response?.data?.error || "No se pudo cargar la disponibilidad"
-        );
+        setSlots([])
+        setMsg(e?.response?.data?.error || "No se pudo cargar la disponibilidad")
       }
-    };
-    run();
-  }, [open, appt, date]);
+    }
+    run()
+  }, [open, appt, date])
 
-  if (!open || !appt) return null;
-
-  const canSave = !!(date && slot);
+  const canSave = !!(date && slot)
   const save = async () => {
-    if (!appt) return;
-    setLoading(true);
-    setMsg("");
+    if (!appt) return
+    setLoading(true)
+    setMsg("")
     try {
-      const starts_at = `${date}T${slot}:00.000Z`;
+      const starts_at = `${date}T${slot}:00.000Z`
       await api.patch(`/calendar/appointments/${appt.id}/reschedule`, {
         starts_at,
-      });
-      setLoading(false);
-      onRescheduled();
-      onClose();
+      })
+      setLoading(false)
+      onRescheduled()
+      onClose()
     } catch (e: any) {
-      setLoading(false);
-      setMsg(e?.response?.data?.error || e.message);
+      setLoading(false)
+      setMsg(e?.response?.data?.error || e.message)
     }
-  };
+  }
 
   return (
-    <div className="fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-[min(92vw,680px)] rounded-2xl bg-white shadow-xl p-5"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-lg font-semibold">Re-agendar</div>
-            <div className="text-sm text-zinc-600">
-              {appt.service?.name} · {appt.specialist?.display_name}
-            </div>
-          </div>
-          <button
+    <AnimatePresence>
+      {open && appt && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={onClose}
-            className="px-2 py-1 rounded-lg hover:bg-zinc-100"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden"
           >
-            ✕
-          </button>
-        </div>
-
-        <div className="mt-4 grid sm:grid-cols-3 gap-4">
-          <label className="block sm:col-span-1">
-            <span className="text-sm text-zinc-700">Nueva fecha</span>
-            <input
-              type="date"
-              className="mt-1 w-full border rounded-xl p-3 bg-white"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </label>
-
-          <div className="sm:col-span-2">
-            <div className="text-sm text-zinc-700 mb-1">
-              Horarios disponibles
-            </div>
-            {slots.length === 0 ? (
-              <p className="text-sm text-zinc-500">
-                Selecciona una fecha para ver horarios.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2 max-h-[220px] overflow-auto pr-1">
-                {slots.map((h) => (
-                  <button
-                    key={h}
-                    onClick={() => setSlot(h)}
-                    className={cn(
-                      "px-3 py-2 rounded-xl border bg-white text-sm",
-                      slot === h
-                        ? "ring-2 ring-black border-black"
-                        : "hover:bg-zinc-50"
-                    )}
-                  >
-                    {h}
-                  </button>
-                ))}
+            {/* Header */}
+            <div className="bg-gradient-to-r from-primary to-primary/90 p-6 text-primary-foreground">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    <h2 className="text-xl font-bold font-sans">Re-agendar Cita</h2>
+                  </div>
+                  <p className="text-primary-foreground/80 font-medium">
+                    {appt.service?.name} · {appt.specialist?.display_name}
+                  </p>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {!!msg && <p className="mt-3 text-sm text-red-600">{msg}</p>}
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Date Selection */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-card-foreground">
+                    <Calendar className="w-4 h-4" />
+                    Nueva Fecha
+                  </label>
+                  <motion.input
+                    whileFocus={{ scale: 1.02 }}
+                    type="date"
+                    className="w-full p-3 bg-input border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                </div>
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl border">
-            Cancelar
-          </button>
-          <button
-            disabled={!canSave || loading}
-            onClick={save}
-            className="px-5 py-2 rounded-xl bg-black text-white disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar cambios"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+                {/* Time Slots */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-card-foreground">
+                    <Clock className="w-4 h-4" />
+                    Horarios Disponibles
+                  </label>
+
+                  {slots.length === 0 ? (
+                    <div className="flex items-center gap-2 p-4 bg-muted rounded-xl">
+                      <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Selecciona una fecha para ver horarios disponibles
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
+                      {slots.map((h) => (
+                        <motion.button
+                          key={h}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSlot(h)}
+                          className={cn(
+                            "p-3 rounded-xl border text-sm font-medium transition-all",
+                            slot === h
+                              ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                              : "bg-background hover:bg-muted border-border",
+                          )}
+                        >
+                          {h}
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Error Message */}
+              <AnimatePresence>
+                {msg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl"
+                  >
+                    <AlertCircle className="w-4 h-4 text-destructive" />
+                    <p className="text-sm text-destructive">{msg}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 p-6 bg-muted/30 border-t border-border">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-xl border border-border bg-background hover:bg-muted transition-colors font-medium"
+              >
+                Cancelar
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: canSave && !loading ? 1.02 : 1 }}
+                whileTap={{ scale: canSave && !loading ? 0.98 : 1 }}
+                disabled={!canSave || loading}
+                onClick={save}
+                className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
+                    />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Guardar Cambios
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }

@@ -4,74 +4,76 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.01 195); /* Light cyan background */
-  --foreground: oklch(0.35 0.02 225); /* Dark gray-blue text */
-  --card: oklch(1 0 0); /* Pure white cards */
-  --card-foreground: oklch(0.35 0.02 225);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.35 0.02 225);
-  --primary: oklch(0.25 0.08 200); /* Cyan-800 primary */
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0.01 195); /* Light cyan secondary */
-  --secondary-foreground: oklch(0.35 0.02 225);
-  --muted: oklch(0.95 0.005 210);
-  --muted-foreground: oklch(0.45 0.02 220);
-  --accent: oklch(0.55 0.15 25); /* Subtle accent */
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.55 0.15 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.88 0.01 210);
-  --input: oklch(0.97 0.005 200);
-  --ring: oklch(0.25 0.08 200 / 0.2);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.5rem; /* Updated radius for softer appearance */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Updated color tokens to match premium tech panel design brief */
+  --background: #ffffff; /* Main background for the panel */
+  --foreground: #475569; /* Primary text color */
+  --card: #ecfeff; /* Background for cards */
+  --card-foreground: #164e63; /* Text color on cards */
+  --popover: #ffffff; /* Background for popovers */
+  --popover-foreground: #475569; /* Text color on popovers */
+  --primary: #164e63; /* Used for call-to-action buttons */
+  --primary-foreground: #ffffff; /* Text color on primary buttons */
+  --secondary: #6366f1; /* Used for secondary actions */
+  --secondary-foreground: #ffffff; /* Text color on secondary actions */
+  --muted: #f8fafc; /* Background for muted elements */
+  --muted-foreground: #475569; /* Text color for muted elements */
+  --accent: #6366f1; /* Used for interactive elements */
+  --accent-foreground: #ffffff; /* Text color for accents */
+  --destructive: #ef4444; /* Color for destructive actions */
+  --destructive-foreground: #ffffff; /* Text color for destructive actions */
+  --border: #d1d5db; /* Default border color */
+  --input: #f3f4f6; /* Input field background */
+  --ring: rgba(98, 166, 241, 0.5); /* Ring color for focus states */
+  --chart-1: #6ee7b7;
+  --chart-2: #3b82f6;
+  --chart-3: #fbbf24;
+  --chart-4: #f87171;
+  --chart-5: #9333ea;
+  --radius: 0.5rem;
+  --sidebar: #ecfeff; /* Background for sidebar */
+  --sidebar-foreground: #164e63; /* Text color for sidebar */
+  --sidebar-primary: #475569; /* Primary sidebar color */
+  --sidebar-primary-foreground: #ffffff; /* Text color for primary sidebar */
+  --sidebar-accent: #6366f1; /* Accent color for sidebar */
+  --sidebar-accent-foreground: #ffffff; /* Text color for sidebar accents */
+  --sidebar-border: #d1d5db; /* Sidebar border color */
+  --sidebar-ring: rgba(98, 166, 241, 0.5); /* Sidebar focus ring */
 }
 
 .dark {
-  --background: oklch(0.08 0.01 225);
-  --foreground: oklch(0.95 0.01 195);
-  --card: oklch(0.1 0.01 225);
-  --card-foreground: oklch(0.95 0.01 195);
-  --popover: oklch(0.1 0.01 225);
-  --popover-foreground: oklch(0.95 0.01 195);
-  --primary: oklch(0.7 0.1 195);
-  --primary-foreground: oklch(0.1 0.01 225);
-  --secondary: oklch(0.15 0.01 225);
-  --secondary-foreground: oklch(0.95 0.01 195);
-  --muted: oklch(0.15 0.01 225);
-  --muted-foreground: oklch(0.6 0.02 210);
-  --accent: oklch(0.15 0.01 225);
-  --accent-foreground: oklch(0.95 0.01 195);
-  --destructive: oklch(0.5 0.15 25);
-  --destructive-foreground: oklch(0.95 0.01 195);
-  --border: oklch(0.15 0.01 225);
-  --input: oklch(0.15 0.01 225);
-  --ring: oklch(0.7 0.1 195 / 0.3);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  /* Updated dark mode tokens to match tech panel design brief */
+  --background: #0f172a;
+  --foreground: #ecfeff;
+  --card: #1e293b;
+  --card-foreground: #6366f1;
+  --popover: #1e293b;
+  --popover-foreground: #ecfeff;
+  --primary: #164e63;
+  --primary-foreground: #ffffff;
+  --secondary: #6366f1;
+  --secondary-foreground: #0f172a;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #6366f1;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ecfeff;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: rgba(98, 166, 241, 0.3);
+  --chart-1: #6ee7b7;
+  --chart-2: #3b82f6;
+  --chart-3: #fbbf24;
+  --chart-4: #f87171;
+  --chart-5: #9333ea;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #ecfeff;
+  --sidebar-primary: #475569;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #6366f1;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #334155;
+  --sidebar-ring: rgba(98, 166, 241, 0.3);
 }
 
 @theme inline {
