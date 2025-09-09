@@ -231,17 +231,6 @@ export default function PremiumAdminUsers() {
                 })}
               </div>
             </div>
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="text"
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-input border border-border rounded-xl text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all w-full lg:w-80"
-              />
-            </div>
           </div>
         </motion.div>
 
