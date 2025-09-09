@@ -1,3 +1,5 @@
+"use client";
+
 // src/pages/admin/WeeklyHoursEditor.tsx
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Trash2, Save } from "lucide-react";
@@ -80,7 +82,10 @@ export default function WeeklyHoursEditor({
   const addInterval = (day: DayKey) => {
     setWeek((prev) => {
       const next = { ...prev };
-      next[day] = [...next[day], { start: "09:00", end: "18:00", active: true }];
+      next[day] = [
+        ...next[day],
+        { start: "09:00", end: "18:00", active: true },
+      ];
       return next;
     });
   };
@@ -179,7 +184,9 @@ export default function WeeklyHoursEditor({
                         className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
                       >
                         <label className="sm:col-span-5 text-sm">
-                          <span className="text-zinc-700 block mb-1">Inicio</span>
+                          <span className="text-zinc-700 block mb-1">
+                            Inicio
+                          </span>
                           <input
                             type="time"
                             value={it.start || "09:00"}
