@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/haptics": "^7.0.2",
     "@capacitor/ios": "^7.4.3",
+    "@capacitor/keyboard": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3",
     "@supabase/supabase-js": "^2.57.2",
     "axios": "^1.11.0",
     "framer-motion": "^12.23.12",
@@ -22,7 +24,9 @@
     "react-router-dom": "^7.8.2"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.4.3",
     "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
     "@eslint/js": "^9.33.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/react": "^19.1.10",
