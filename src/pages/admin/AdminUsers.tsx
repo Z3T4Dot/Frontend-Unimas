@@ -6,7 +6,6 @@ import {
   Users,
   Mail,
   Filter,
-  Search,
   Calendar,
   Crown,
   Wrench,
@@ -50,7 +49,7 @@ export default function PremiumAdminUsers() {
   const [role, setRole] = useState<string>("");
   const [items, setItems] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -231,6 +230,7 @@ export default function PremiumAdminUsers() {
                 })}
               </div>
             </div>
+
           </div>
         </motion.div>
 
