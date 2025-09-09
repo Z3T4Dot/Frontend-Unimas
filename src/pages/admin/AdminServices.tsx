@@ -214,12 +214,12 @@ export default function PremiumAdminServices() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-4">
                 <label className="block">
-                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
+                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2 mb-2">
                     <Settings className="w-4 h-4" />
                     Nombre del servicio
                   </span>
                   <input
-                    className="mt-2 w-full bg-input border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full h-12 bg-input border border-border rounded-xl px-4 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej. Consulta general"
@@ -229,14 +229,14 @@ export default function PremiumAdminServices() {
 
               <div className="lg:col-span-2">
                 <label className="block">
-                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
+                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4" />
                     Duración (min)
                   </span>
                   <input
                     type="number"
                     min={1}
-                    className="mt-2 w-full bg-input border border-border rounded-xl px-4 py-3 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full h-12 bg-input border border-border rounded-xl px-4 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value || 0))}
                   />
@@ -245,14 +245,15 @@ export default function PremiumAdminServices() {
 
               <div className="lg:col-span-2">
                 <label className="block">
-                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
+                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2 mb-2">
                     <DollarSign className="w-4 h-4" />
-                    Precio
+                    Precio (USD)
                   </span>
                   <input
                     type="number"
                     min={0}
-                    className="mt-2 w-full bg-input border border-border rounded-xl px-4 py-3 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    step="0.01"
+                    className="w-full h-12 bg-input border border-border rounded-xl px-4 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     value={price}
                     onChange={(e) => setPrice(Number(e.target.value || 0))}
                   />
@@ -261,12 +262,12 @@ export default function PremiumAdminServices() {
 
               <div className="lg:col-span-3">
                 <label className="block">
-                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
+                  <span className="text-sm font-medium text-card-foreground flex items-center gap-2 mb-2">
                     <ImageIcon className="w-4 h-4" />
                     Imagen (URL)
                   </span>
                   <input
-                    className="mt-2 w-full bg-input border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full h-12 bg-input border border-border rounded-xl px-4 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     value={image}
                     onChange={(e) => setImage(e.target.value)}
                     placeholder="https://..."
@@ -280,7 +281,7 @@ export default function PremiumAdminServices() {
                   whileTap={{ scale: 0.98 }}
                   onClick={create}
                   disabled={!canCreate}
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-medium px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                  className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center"
                 >
                   Crear
                 </motion.button>
@@ -668,11 +669,11 @@ function SubtypesEditor({
                 >
                   <div className="lg:col-span-6">
                     <label className="block">
-                      <span className="text-sm font-medium text-foreground">
+                      <span className="text-sm font-medium text-foreground mb-2 block">
                         Nombre del subtipo
                       </span>
                       <input
-                        className="mt-1 w-full bg-input border border-border rounded-xl px-3 py-2 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        className="w-full h-11 bg-input border border-border rounded-xl px-4 text-foreground placeholder-muted focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                         value={r.name}
                         onChange={(e) =>
                           updateRow(idx, { name: e.target.value })
@@ -684,13 +685,13 @@ function SubtypesEditor({
 
                   <div className="lg:col-span-2">
                     <label className="block">
-                      <span className="text-sm font-medium text-foreground">
+                      <span className="text-sm font-medium text-foreground mb-2 block">
                         Duración (min)
                       </span>
                       <input
                         type="number"
                         min={1}
-                        className="mt-1 w-full bg-input border border-border rounded-xl px-3 py-2 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        className="w-full h-11 bg-input border border-border rounded-xl px-4 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                         value={r.duration_min}
                         onChange={(e) =>
                           updateRow(idx, {
@@ -703,13 +704,14 @@ function SubtypesEditor({
 
                   <div className="lg:col-span-3">
                     <label className="block">
-                      <span className="text-sm font-medium text-foreground">
-                        Precio
+                      <span className="text-sm font-medium text-foreground mb-2 block">
+                        Precio (USD)
                       </span>
                       <input
                         type="number"
                         min={0}
-                        className="mt-1 w-full bg-input border border-border rounded-xl px-3 py-2 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        step="0.01"
+                        className="w-full h-11 bg-input border border-border rounded-xl px-4 text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                         value={r.price}
                         onChange={(e) =>
                           updateRow(idx, { price: Number(e.target.value || 0) })
@@ -718,14 +720,14 @@ function SubtypesEditor({
                     </label>
                   </div>
 
-                  <div className="lg:col-span-1">
+                  <div className="lg:col-span-1 flex items-end">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => removeRow(idx)}
-                      className="w-full bg-destructive/10 hover:bg-destructive/20 text-destructive p-2 rounded-xl transition-colors"
+                      className="w-full h-11 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-xl transition-colors flex items-center justify-center"
                     >
-                      <Trash2 className="w-4 h-4 mx-auto" />
+                      <Trash2 className="w-4 h-4" />
                     </motion.button>
                   </div>
                 </motion.div>
