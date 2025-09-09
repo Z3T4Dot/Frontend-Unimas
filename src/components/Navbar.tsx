@@ -128,7 +128,7 @@ function UserInfo({ user }: { user: any }) {
       <div className="flex items-center gap-2">
         <User size={14} className="text-muted-foreground" />
         <span className="text-sm font-medium text-foreground">
-          {user.display_name || user.email?.split("@")[0] || "Usuario"}
+          {user.name || "Usuario"}
         </span>
       </div>
       {user.email && (
@@ -250,7 +250,7 @@ export default function ResponsivePremiumNavbar() {
                 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors duration-300"
                 whileHover={{ x: 2 }}
               >
-                Unimas
+                Uñimas
               </motion.span>
 
               <AnimatePresence>
