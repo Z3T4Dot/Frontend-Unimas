@@ -1,5 +1,5 @@
 // Export environment variables with proper typing
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://back-unimas-v2.up.railway.app/api';
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || '';
 
