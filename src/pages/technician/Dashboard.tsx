@@ -15,14 +15,16 @@ import {
   Plus,
   MessageCircle,
   FileText,
+  Users,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import BottomNavbar, { type NavTab } from "../../components/ui/BottomNavbar";
 import BookAppointment from "../../components/admin/BookAppointment";
 import AddObservationsModal from "../../components/technician/AddObservationsModal";
+import ClientHistory from "../../components/technician/ClientHistory";
 
-type TechTab = "home" | "schedule" | "book" | "stats";
+type TechTab = "home" | "schedule" | "book" | "clients" | "stats";
 
 export default function TechnicianDashboard() {
   const { user } = useAuthStore();
@@ -134,6 +136,7 @@ export default function TechnicianDashboard() {
       badge: scheduledAppointments.length,
     },
     { id: "book", label: "Agendar", icon: Plus },
+    { id: "clients", label: "Clientes", icon: Users },
     { id: "stats", label: "Stats", icon: BarChart3 },
   ];
 
@@ -501,6 +504,13 @@ export default function TechnicianDashboard() {
                 <span>Iniciar Agendamiento</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Clients Tab */}
+        {activeTab === "clients" && (
+          <div className="animate-fadeIn">
+            <ClientHistory />
           </div>
         )}
 

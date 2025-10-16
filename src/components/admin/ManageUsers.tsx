@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react'
 import { usersAPI, User } from '../../lib/api'
-import { Plus, Edit, Trash2, Search, UserPlus, Clock } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, UserPlus, Clock, ChevronDown } from 'lucide-react'
 import ManageSchedules from './ManageSchedules'
+import ConfirmModal from '../common/ConfirmModal'
+import { useAuthStore } from '../../store/authStore'
 
 export default function ManageUsers() {
+  const { user: currentUser } = useAuthStore()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState<string>('all')
   const [showManageSchedules, setShowManageSchedules] = useState(false)
+  const [openRoleDropdown, setOpenRoleDropdown] = useState<string | null>(null)
+  const [roleChangeConfirm, setRoleChangeConfirm] = useState<{
+    userId: string
+    userName: string
+    newRole: 'ADMIN' | 'TECHNICIAN' | 'CLIENT'
+  } | null>(null)
+  const [isChangingRole, setIsChangingRole] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -39,6 +49,23 @@ export default function ManageUsers() {
     }
   }
 
+  const handleRoleChange = async () => {
+    if (!roleChangeConfirm) return
+
+    setIsChangingRole(true)
+    try {
+      await usersAPI.updateRole(roleChangeConfirm.userId, roleChangeConfirm.newRole)
+      await loadUsers()
+      setRoleChangeConfirm(null)
+      setOpenRoleDropdown(null)
+    } catch (error: any) {
+      console.error('Error changing role:', error)
+      alert(error.response?.data?.message || 'Error al cambiar el rol')
+    } finally {
+      setIsChangingRole(false)
+    }
+  }
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,20 +74,80 @@ export default function ManageUsers() {
     return matchesSearch && matchesRole
   })
 
-  const getRoleBadge = (role: string) => {
+  const getRoleDropdown = (user: User) => {
+    const isCurrentUser = user.id === currentUser?.id
+    const isOpen = openRoleDropdown === user.id
+
     const styles = {
-      ADMIN: 'bg-red-100 text-red-700',
-      TECHNICIAN: 'bg-blue-100 text-blue-700',
-      CLIENT: 'bg-green-100 text-green-700',
+      ADMIN: 'bg-red-100 text-red-700 hover:bg-red-200',
+      TECHNICIAN: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+      CLIENT: 'bg-green-100 text-green-700 hover:bg-green-200',
     }
+
+    const roles: Array<{ value: 'ADMIN' | 'TECHNICIAN' | 'CLIENT'; label: string }> = [
+      { value: 'ADMIN', label: 'Admin' },
+      { value: 'TECHNICIAN', label: 'Técnico' },
+      { value: 'CLIENT', label: 'Cliente' },
+    ]
+
     return (
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${
-          styles[role as keyof typeof styles]
-        }`}
-      >
-        {role}
-      </span>
+      <div className="relative">
+        <button
+          onClick={() => setOpenRoleDropdown(isOpen ? null : user.id)}
+          disabled={isCurrentUser}
+          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 transition-all ${
+            styles[user.role as keyof typeof styles]
+          } ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          title={isCurrentUser ? 'No puedes cambiar tu propio rol' : 'Cambiar rol'}
+        >
+          <span>{user.role}</span>
+          {!isCurrentUser && (
+            <ChevronDown
+              className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            />
+          )}
+        </button>
+
+        {isOpen && !isCurrentUser && (
+          <>
+            {/* Backdrop to close dropdown */}
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setOpenRoleDropdown(null)}
+            />
+
+            {/* Dropdown menu */}
+            <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border-2 border-neutral-200 z-20 overflow-hidden min-w-[140px] animate-fadeIn">
+              {roles.map((role) => (
+                <button
+                  key={role.value}
+                  onClick={() => {
+                    if (role.value !== user.role) {
+                      setRoleChangeConfirm({
+                        userId: user.id,
+                        userName: user.name,
+                        newRole: role.value,
+                      })
+                    }
+                    setOpenRoleDropdown(null)
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
+                    role.value === user.role
+                      ? 'bg-neutral-100 text-neutral-900 cursor-default'
+                      : 'text-neutral-700 hover:bg-neutral-50'
+                  }`}
+                  disabled={role.value === user.role}
+                >
+                  {role.label}
+                  {role.value === user.role && (
+                    <span className="ml-2 text-xs text-neutral-500">(actual)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     )
   }
 
@@ -158,7 +245,7 @@ export default function ManageUsers() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getRoleBadge(user.role)}
+                    {getRoleDropdown(user)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -218,6 +305,19 @@ export default function ManageUsers() {
           }}
         />
       )}
+
+      {/* Role Change Confirmation Modal */}
+      <ConfirmModal
+        isOpen={roleChangeConfirm !== null}
+        title="Cambiar Rol de Usuario"
+        message={`¿Estás seguro de cambiar el rol de ${roleChangeConfirm?.userName} a ${roleChangeConfirm?.newRole}?`}
+        confirmText="Cambiar Rol"
+        cancelText="Cancelar"
+        variant="warning"
+        isLoading={isChangingRole}
+        onConfirm={handleRoleChange}
+        onCancel={() => setRoleChangeConfirm(null)}
+      />
     </div>
   )
 }

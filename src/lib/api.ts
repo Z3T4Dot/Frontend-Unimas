@@ -171,6 +171,11 @@ export const usersAPI = {
     return data
   },
 
+  updateRole: async (id: string, role: 'ADMIN' | 'TECHNICIAN' | 'CLIENT') => {
+    const { data } = await api.put(`/users/${id}`, { role })
+    return data
+  },
+
   delete: async (id: string) => {
     const { data } = await api.delete(`/users/${id}`)
     return data

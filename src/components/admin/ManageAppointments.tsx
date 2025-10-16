@@ -1,29 +1,62 @@
 import { useState, useEffect } from 'react'
 import { appointmentsAPI, Appointment } from '../../lib/api'
-import { Calendar, Clock, Search, User, DollarSign, Filter } from 'lucide-react'
-import { format } from 'date-fns'
+import { Calendar, Clock, Search, User, DollarSign, Filter, CalendarDays } from 'lucide-react'
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+type PeriodType = 'day' | 'week' | 'month' | 'all'
 
 export default function ManageAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [filterDate, setFilterDate] = useState('')
+  const [filterDate, setFilterDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [viewPeriod, setViewPeriod] = useState<PeriodType>('day')
 
   useEffect(() => {
     loadAppointments()
-  }, [filterStatus, filterDate])
+  }, [filterStatus, filterDate, viewPeriod])
 
   const loadAppointments = async () => {
     try {
       const params: any = {}
       if (filterStatus !== 'all') params.status = filterStatus
-      if (filterDate) params.date = filterDate
+
+      // Para periodo "day", usar la fecha específica
+      // Para otros periodos, cargar todas las citas y filtrar en el frontend
+      if (viewPeriod === 'day' && filterDate) {
+        params.date = filterDate
+      }
 
       const response = await appointmentsAPI.getAll(params)
       if (response.success) {
-        setAppointments(response.data)
+        let filteredData = response.data
+
+        // Filtrar por periodo en el frontend
+        if (viewPeriod !== 'all' && viewPeriod !== 'day' && filterDate) {
+          const baseDate = parseISO(filterDate)
+          let startDate: Date
+          let endDate: Date
+
+          if (viewPeriod === 'week') {
+            startDate = startOfWeek(baseDate, { locale: es })
+            endDate = endOfWeek(baseDate, { locale: es })
+          } else if (viewPeriod === 'month') {
+            startDate = startOfMonth(baseDate)
+            endDate = endOfMonth(baseDate)
+          } else {
+            startDate = baseDate
+            endDate = baseDate
+          }
+
+          filteredData = response.data.filter((apt: Appointment) => {
+            const aptDate = parseISO(apt.date)
+            return aptDate >= startDate && aptDate <= endDate
+          })
+        }
+
+        setAppointments(filteredData)
       }
     } catch (error) {
       console.error('Error loading appointments:', error)
@@ -86,6 +119,23 @@ export default function ManageAppointments() {
     )
   }
 
+  const getPeriodLabel = () => {
+    if (!filterDate || viewPeriod === 'all') return 'Todas las citas'
+
+    const baseDate = parseISO(filterDate)
+
+    if (viewPeriod === 'day') {
+      return format(baseDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
+    } else if (viewPeriod === 'week') {
+      const start = startOfWeek(baseDate, { locale: es })
+      const end = endOfWeek(baseDate, { locale: es })
+      return `${format(start, 'd MMM', { locale: es })} - ${format(end, 'd MMM yyyy', { locale: es })}`
+    } else if (viewPeriod === 'month') {
+      return format(baseDate, "MMMM yyyy", { locale: es })
+    }
+    return ''
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -100,6 +150,59 @@ export default function ManageAppointments() {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-gray-900">Gestión de Citas</h2>
 
+        {/* Period Selector */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+          <CalendarDays className="w-5 h-5 text-neutral-600 flex-shrink-0" />
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setViewPeriod('day')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                viewPeriod === 'day'
+                  ? 'bg-neutral-900 text-white shadow-md'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+            >
+              Día
+            </button>
+            <button
+              onClick={() => setViewPeriod('week')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                viewPeriod === 'week'
+                  ? 'bg-neutral-900 text-white shadow-md'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setViewPeriod('month')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                viewPeriod === 'month'
+                  ? 'bg-neutral-900 text-white shadow-md'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+            >
+              Mes
+            </button>
+            <button
+              onClick={() => setViewPeriod('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                viewPeriod === 'all'
+                  ? 'bg-neutral-900 text-white shadow-md'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+            >
+              Todas
+            </button>
+          </div>
+        </div>
+
+        {/* Period Label */}
+        <div className="flex items-center space-x-2 text-neutral-700">
+          <Calendar className="w-4 h-4" />
+          <span className="font-semibold capitalize">{getPeriodLabel()}</span>
+        </div>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
           <div className="flex flex-wrap gap-3 flex-1">
             <div className="relative flex-1 min-w-[200px]">
@@ -113,12 +216,14 @@ export default function ManageAppointments() {
               />
             </div>
 
-            <input
-              type="date"
-              className="input"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-            />
+            {viewPeriod !== 'all' && (
+              <input
+                type="date"
+                className="input"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
+            )}
 
             <select
               className="input"
@@ -134,8 +239,9 @@ export default function ManageAppointments() {
             <button
               onClick={() => {
                 setSearch('')
-                setFilterDate('')
+                setFilterDate(format(new Date(), 'yyyy-MM-dd'))
                 setFilterStatus('all')
+                setViewPeriod('day')
               }}
               className="btn btn-secondary"
             >

@@ -105,7 +105,18 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
     try {
       const response = await usersAPI.getTechnicians()
       if (response.success) {
-        setTechnicians(response.data)
+        let techList = response.data
+
+        // Si el usuario actual es admin, agregarlo a la lista de técnicos si no está ya incluido
+        if (isAdmin && currentUser) {
+          const adminAlreadyInList = techList.some((t: UserType) => t.id === currentUser.id)
+          if (!adminAlreadyInList) {
+            // Agregar al admin actual al inicio de la lista
+            techList = [currentUser, ...techList]
+          }
+        }
+
+        setTechnicians(techList)
       }
     } catch (error) {
       console.error('Error loading technicians:', error)
@@ -365,49 +376,157 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {services.map((service) => {
-                  const isSelected = selectedServices.includes(service.id)
-                  return (
-                    <button
-                      key={service.id}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedServices(selectedServices.filter((s) => s !== service.id))
-                        } else {
-                          setSelectedServices([...selectedServices, service.id])
-                        }
-                      }}
-                      className={`text-left p-4 rounded-xl border-2 transition-all ${
-                        isSelected
-                          ? 'border-neutral-900 bg-neutral-50 shadow-md'
-                          : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-neutral-900 flex-1">
-                          {service.name}
-                        </h4>
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                          isSelected
-                            ? 'border-neutral-900 bg-neutral-900'
-                            : 'border-neutral-300'
-                        }`}>
-                          {isSelected && <Check className="w-4 h-4 text-white" />}
-                        </div>
+              {/* Categories Accordion */}
+              <div className="space-y-3">
+                {categories.length > 0 ? (
+                  categories.map((category) => {
+                    const categoryServices = services.filter(s => s.category_id === category.id)
+                    const isExpanded = expandedCategory === category.id
+                    const selectedCount = categoryServices.filter(s => selectedServices.includes(s.id)).length
+
+                    return (
+                      <div key={category.id} className="border-2 border-neutral-200 rounded-xl overflow-hidden">
+                        {/* Category Header */}
+                        <button
+                          onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-all"
+                          style={{ borderLeftColor: category.color, borderLeftWidth: '4px' }}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                              style={{ backgroundColor: `${category.color}20` }}
+                            >
+                              {category.icon}
+                            </div>
+                            <div className="text-left">
+                              <h4 className="font-semibold text-neutral-900">{category.name}</h4>
+                              {category.description && (
+                                <p className="text-sm text-neutral-600">{category.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {selectedCount > 0 && (
+                              <span className="px-2 py-1 bg-neutral-900 text-white text-xs font-semibold rounded-lg">
+                                {selectedCount}
+                              </span>
+                            )}
+                            <ChevronDown
+                              className={`w-5 h-5 text-neutral-400 transition-transform ${
+                                isExpanded ? 'transform rotate-180' : ''
+                              }`}
+                            />
+                          </div>
+                        </button>
+
+                        {/* Services List */}
+                        {isExpanded && (
+                          <div className="p-4 bg-neutral-50 border-t border-neutral-200 space-y-2 animate-fadeIn">
+                            {categoryServices.map((service) => {
+                              const isSelected = selectedServices.includes(service.id)
+                              return (
+                                <button
+                                  key={service.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedServices(selectedServices.filter((s) => s !== service.id))
+                                    } else {
+                                      setSelectedServices([...selectedServices, service.id])
+                                    }
+                                  }}
+                                  className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                                    isSelected
+                                      ? 'border-neutral-900 bg-white shadow-sm'
+                                      : 'border-neutral-200 bg-white hover:border-neutral-300'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <h5 className="font-semibold text-neutral-900">{service.name}</h5>
+                                      {service.description && (
+                                        <p className="text-sm text-neutral-600 mt-1 line-clamp-1">
+                                          {service.description}
+                                        </p>
+                                      )}
+                                      <div className="flex items-center space-x-3 mt-2 text-sm">
+                                        <span className="text-neutral-500">
+                                          <Clock className="w-3 h-3 inline mr-1" />
+                                          {service.duration_minutes} min
+                                        </span>
+                                        <span className="font-bold text-neutral-900">
+                                          ${service.price.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ml-3 ${
+                                      isSelected
+                                        ? 'border-neutral-900 bg-neutral-900'
+                                        : 'border-neutral-300'
+                                    }`}>
+                                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                                    </div>
+                                  </div>
+                                </button>
+                              )
+                            })}
+                            {categoryServices.length === 0 && (
+                              <p className="text-center text-neutral-500 py-4 text-sm">
+                                No hay servicios en esta categoría
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      {service.description && (
-                        <p className="text-sm text-neutral-600 mb-3 line-clamp-2">
-                          {service.description}
-                        </p>
-                      )}
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-neutral-500">{service.duration_minutes} min</span>
-                        <span className="font-bold text-neutral-900">${service.price.toFixed(2)}</span>
-                      </div>
-                    </button>
-                  )
-                })}
+                    )
+                  })
+                ) : (
+                  /* Fallback to list without categories */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {services.map((service) => {
+                      const isSelected = selectedServices.includes(service.id)
+                      return (
+                        <button
+                          key={service.id}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedServices(selectedServices.filter((s) => s !== service.id))
+                            } else {
+                              setSelectedServices([...selectedServices, service.id])
+                            }
+                          }}
+                          className={`text-left p-4 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? 'border-neutral-900 bg-neutral-50 shadow-md'
+                              : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-neutral-900 flex-1">
+                              {service.name}
+                            </h4>
+                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                              isSelected
+                                ? 'border-neutral-900 bg-neutral-900'
+                                : 'border-neutral-300'
+                            }`}>
+                              {isSelected && <Check className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                          {service.description && (
+                            <p className="text-sm text-neutral-600 mb-3 line-clamp-2">
+                              {service.description}
+                            </p>
+                          )}
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-neutral-500">{service.duration_minutes} min</span>
+                            <span className="font-bold text-neutral-900">${service.price.toFixed(2)}</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {selectedServices.length > 0 && (
@@ -451,6 +570,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {technicians.map((tech) => {
                   const isSelected = selectedTechnician === tech.id
+                  const isCurrentAdmin = tech.id === currentUser?.id
                   return (
                     <button
                       key={tech.id}
@@ -468,7 +588,14 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                           {tech.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-neutral-900">{tech.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-neutral-900">{tech.name}</h4>
+                            {isCurrentAdmin && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-md border border-amber-200">
+                                Tú (Admin)
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-neutral-600">{tech.email}</p>
                           {tech.phone && (
                             <p className="text-xs text-neutral-500 mt-1">{tech.phone}</p>

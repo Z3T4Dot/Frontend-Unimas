@@ -3,6 +3,7 @@ import { servicesAPI, categoriesAPI, Service, Category } from '../../lib/api'
 import { Plus, Edit, Trash2, Search, Tag, UserCog, List } from 'lucide-react'
 import AssignServices from './AssignServices'
 import ManageCategories from './ManageCategories'
+import ServiceFormModal from './ServiceFormModal'
 
 type TabType = 'services' | 'categories'
 
@@ -116,6 +117,13 @@ export default function ManageServices() {
               />
             </div>
             <button
+              onClick={() => setShowAddService(true)}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-md transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nuevo Servicio</span>
+            </button>
+            <button
               onClick={() => setShowAssignServices(true)}
               className="flex items-center justify-center space-x-2 px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold shadow-md transition-all"
             >
@@ -185,8 +193,16 @@ export default function ManageServices() {
 
             <div className="flex space-x-2 mt-4">
               <button
+                onClick={() => setEditingService(service)}
+                className="flex-1 btn bg-blue-50 text-blue-600 hover:bg-blue-100"
+                title="Editar servicio"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => handleDelete(service.id)}
                 className="flex-1 btn bg-red-50 text-red-600 hover:bg-red-100"
+                title="Eliminar servicio"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -254,6 +270,22 @@ export default function ManageServices() {
           onClose={() => setShowAssignServices(false)}
           onSuccess={() => {
             setShowAssignServices(false)
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Add/Edit Service Modal */}
+      {(showAddService || editingService) && (
+        <ServiceFormModal
+          service={editingService}
+          onClose={() => {
+            setShowAddService(false)
+            setEditingService(null)
+          }}
+          onSuccess={() => {
+            setShowAddService(false)
+            setEditingService(null)
             loadData()
           }}
         />

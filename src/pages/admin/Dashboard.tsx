@@ -22,7 +22,7 @@ import { es } from 'date-fns/locale'
 import ManageUsers from '../../components/admin/ManageUsers'
 import ManageServices from '../../components/admin/ManageServices'
 import ManageAppointments from '../../components/admin/ManageAppointments'
-import Statistics from '../../components/admin/Statistics'
+import EnhancedStatistics from '../../components/admin/EnhancedStatistics'
 import ClientRecords from '../../components/admin/ClientRecords'
 import BottomNavbar, { NavTab } from '../../components/ui/BottomNavbar'
 import BookAppointment from '../../components/admin/BookAppointment'
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
         {/* Admin View */}
         {viewMode === 'admin' && (
           <div className="animate-fadeIn">
-            {adminActiveTab === 'stats' && <Statistics />}
+            {adminActiveTab === 'stats' && <EnhancedStatistics />}
             {adminActiveTab === 'appointments' && <ManageAppointments />}
             {adminActiveTab === 'records' && <ClientRecords />}
             {adminActiveTab === 'users' && <ManageUsers />}
