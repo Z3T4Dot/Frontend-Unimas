@@ -7,6 +7,12 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
+
+    // ✅ Permite a la app contactar al backend y frontend
+    allowNavigation: [
+      'https://back-unimas-v2.up.railway.app',
+      'https://front-unimas-v2.up.railway.app',
+    ],
   },
   plugins: {
     SplashScreen: {
