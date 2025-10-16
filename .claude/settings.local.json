@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/caaa2/OneDrive/Documentos/Desarrollo/Darwin Uñimas/Frontend/**)",
+      "Bash(npm run dev)",
+      "Read(//c/Users/caaa2/OneDrive/Documentos/Desarrollo/Darwin Uñimas/Backend/src/repositories/**)",
+      "Read(//c/Users/caaa2/OneDrive/Documentos/Desarrollo/Darwin Uñimas/Backend/**)",
+      "Bash(npm run build)",
+      "Bash(npm install:*)",
+      "Bash(npx cap init:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
