@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Uñimas Spa',
   webDir: 'dist',
   server: {
+    url: "https://front-unimas-v2.up.railway.app",
     androidScheme: 'https',
     iosScheme: 'https',
 
