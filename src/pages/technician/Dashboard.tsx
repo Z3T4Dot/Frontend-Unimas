@@ -1,29 +1,49 @@
-import { useState, useEffect } from 'react'
-import { useAuthStore } from '../../store/authStore'
-import { appointmentsAPI, Appointment } from '../../lib/api'
-import { Calendar, Clock, CheckCircle, XCircle, User, Home, BarChart3, DollarSign, Plus, MessageCircle } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import BottomNavbar, { NavTab } from '../../components/ui/BottomNavbar'
-import BookAppointment from '../../components/admin/BookAppointment'
+"use client";
 
-type TechTab = 'home' | 'schedule' | 'book' | 'stats'
+import { useState, useEffect } from "react";
+import { useAuthStore } from "../../store/authStore";
+import { appointmentsAPI, type Appointment } from "../../lib/api";
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  User,
+  Home,
+  BarChart3,
+  DollarSign,
+  Plus,
+  MessageCircle,
+  FileText,
+} from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import BottomNavbar, { type NavTab } from "../../components/ui/BottomNavbar";
+import BookAppointment from "../../components/admin/BookAppointment";
+import AddObservationsModal from "../../components/technician/AddObservationsModal";
+
+type TechTab = "home" | "schedule" | "book" | "stats";
 
 export default function TechnicianDashboard() {
-  const { user } = useAuthStore()
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [summary, setSummary] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<TechTab>('home')
-  const [showBookModal, setShowBookModal] = useState(false)
+  const { user } = useAuthStore();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedDate, setSelectedDate] = useState(
+    format(new Date(), "yyyy-MM-dd")
+  );
+  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TechTab>("home");
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [showObservationsModal, setShowObservationsModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
 
   useEffect(() => {
-    loadData()
-  }, [selectedDate])
+    loadData();
+  }, [selectedDate]);
 
   const loadData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const [appointmentsRes, summaryRes] = await Promise.all([
         appointmentsAPI.getAll({
@@ -31,95 +51,120 @@ export default function TechnicianDashboard() {
           date: selectedDate,
         }),
         appointmentsAPI.getTechnicianSummary(user!.id, selectedDate),
-      ])
+      ]);
 
       if (appointmentsRes.success) {
-        setAppointments(appointmentsRes.data)
+        setAppointments(appointmentsRes.data);
       }
       if (summaryRes.success) {
-        setSummary(summaryRes.data)
+        setSummary(summaryRes.data);
       }
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error("Error loading data:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      await appointmentsAPI.update(id, { status })
-      loadData()
+      await appointmentsAPI.update(id, { status });
+      loadData();
     } catch (error) {
-      console.error('Error updating status:', error)
-      alert('Error al actualizar el estado')
+      console.error("Error updating status:", error);
+      alert("Error al actualizar el estado");
     }
-  }
+  };
 
   const handleCancelAppointment = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de cancelar esta cita?')) return
+    if (!window.confirm("¿Estás seguro de cancelar esta cita?")) return;
 
-    const reason = prompt('Motivo de cancelación:')
-    if (!reason) return
+    const reason = prompt("Motivo de cancelación:");
+    if (!reason) return;
 
     try {
-      await appointmentsAPI.cancel(id, reason)
-      loadData()
+      await appointmentsAPI.cancel(id, reason);
+      loadData();
     } catch (error) {
-      console.error('Error canceling appointment:', error)
-      alert('Error al cancelar la cita')
+      console.error("Error canceling appointment:", error);
+      alert("Error al cancelar la cita");
     }
-  }
+  };
 
   const handleSendWhatsApp = async (id: string) => {
-    if (!window.confirm('¿Enviar recordatorio por WhatsApp al cliente?')) return
+    if (!window.confirm("¿Enviar recordatorio por WhatsApp al cliente?"))
+      return;
 
     try {
-      const response = await appointmentsAPI.sendWhatsAppReminder(id)
+      const response = await appointmentsAPI.sendWhatsAppReminder(id);
       if (response.success) {
-        alert('✅ Recordatorio enviado por WhatsApp')
+        alert("✅ Recordatorio enviado por WhatsApp");
       } else {
-        alert('⚠️ Error al enviar WhatsApp. Verifica que esté habilitado en el servidor.')
+        alert(
+          "⚠️ Error al enviar WhatsApp. Verifica que esté habilitado en el servidor."
+        );
       }
     } catch (error: any) {
-      console.error('Error sending WhatsApp:', error)
-      alert(error.response?.data?.error || 'Error al enviar WhatsApp')
+      console.error("Error sending WhatsApp:", error);
+      alert(error.response?.data?.error || "Error al enviar WhatsApp");
     }
-  }
+  };
 
-  const scheduledAppointments = appointments.filter(a => a.status === 'SCHEDULED')
+  const handleAddObservations = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowObservationsModal(true);
+  };
+
+  const handleObservationsSuccess = () => {
+    setShowObservationsModal(false);
+    setSelectedAppointment(null);
+    loadData();
+  };
+
+  const scheduledAppointments = appointments.filter(
+    (a) => a.status === "SCHEDULED"
+  );
 
   const navTabs: NavTab[] = [
-    { id: 'home', label: 'Inicio', icon: Home },
-    { id: 'schedule', label: 'Agenda', icon: Calendar, badge: scheduledAppointments.length },
-    { id: 'book', label: 'Agendar', icon: Plus },
-    { id: 'stats', label: 'Stats', icon: BarChart3 },
-  ]
+    { id: "home", label: "Inicio", icon: Home },
+    {
+      id: "schedule",
+      label: "Agenda",
+      icon: Calendar,
+      badge: scheduledAppointments.length,
+    },
+    { id: "book", label: "Agendar", icon: Plus },
+    { id: "stats", label: "Stats", icon: BarChart3 },
+  ];
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      SCHEDULED: 'bg-blue-50 text-blue-700 border border-blue-200',
-      COMPLETED: 'bg-green-50 text-green-700 border border-green-200',
-      CANCELLED: 'bg-red-50 text-red-700 border border-red-200',
-    }
+      SCHEDULED: "bg-blue-50 text-blue-700 border border-blue-200",
+      COMPLETED: "bg-green-50 text-green-700 border border-green-200",
+      CANCELLED: "bg-red-50 text-red-700 border border-red-200",
+    };
     const labels = {
-      SCHEDULED: 'Agendada',
-      COMPLETED: 'Completada',
-      CANCELLED: 'Cancelada',
-    }
+      SCHEDULED: "Agendada",
+      COMPLETED: "Completada",
+      CANCELLED: "Cancelada",
+    };
     return (
-      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${styles[status as keyof typeof styles]}`}>
+      <span
+        className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+          styles[status as keyof typeof styles]
+        }`}
+      >
         {labels[status as keyof typeof labels]}
       </span>
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="loader"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -149,7 +194,7 @@ export default function TechnicianDashboard() {
         </div>
 
         {/* Home Tab */}
-        {activeTab === 'home' && summary && (
+        {activeTab === "home" && summary && (
           <div className="space-y-6 animate-fadeIn">
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-4">
@@ -157,7 +202,9 @@ export default function TechnicianDashboard() {
                 <div className="flex flex-col gap-2">
                   <Calendar className="w-8 h-8 text-white/80" />
                   <div>
-                    <p className="text-3xl font-bold">{summary.scheduled_appointments}</p>
+                    <p className="text-3xl font-bold">
+                      {summary.scheduled_appointments}
+                    </p>
                     <p className="text-sm text-white/70">Agendadas</p>
                   </div>
                 </div>
@@ -168,7 +215,10 @@ export default function TechnicianDashboard() {
                   <DollarSign className="w-8 h-8 text-neutral-600" />
                   <div>
                     <p className="text-3xl font-bold text-neutral-900">
-                      ${summary.total_earnings ? summary.total_earnings.toFixed(0) : '0'}
+                      $
+                      {summary.total_earnings
+                        ? summary.total_earnings.toFixed(0)
+                        : "0"}
                     </p>
                     <p className="text-sm text-neutral-500">Ganancias</p>
                   </div>
@@ -178,7 +228,7 @@ export default function TechnicianDashboard() {
 
             {/* Quick Actions */}
             <button
-              onClick={() => setActiveTab('book')}
+              onClick={() => setActiveTab("book")}
               className="w-full bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl p-5 flex items-center justify-center space-x-3 shadow-md transition-all active:scale-98"
             >
               <Plus className="w-6 h-6" />
@@ -188,7 +238,9 @@ export default function TechnicianDashboard() {
             {/* Today's Appointments Preview */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900">Citas de hoy</h2>
+                <h2 className="text-lg font-semibold text-neutral-900">
+                  Citas de hoy
+                </h2>
                 <span className="text-sm text-neutral-500">
                   {appointments.length} total
                 </span>
@@ -206,20 +258,27 @@ export default function TechnicianDashboard() {
               ) : (
                 <div className="space-y-3">
                   {appointments.slice(0, 3).map((apt) => (
-                    <div key={apt.id} className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-4">
+                    <div
+                      key={apt.id}
+                      className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-4"
+                    >
                       <div className="flex items-center justify-between mb-3">
                         {getStatusBadge(apt.status)}
                         <span className="text-sm font-semibold text-neutral-900">
                           {apt.start_time}
                         </span>
                       </div>
-                      <p className="font-semibold text-neutral-900">{apt.client_name}</p>
-                      <p className="text-sm text-neutral-500">{apt.client_phone}</p>
+                      <p className="font-semibold text-neutral-900">
+                        {apt.client_name}
+                      </p>
+                      <p className="text-sm text-neutral-500">
+                        {apt.client_phone}
+                      </p>
                     </div>
                   ))}
                   {appointments.length > 3 && (
                     <button
-                      onClick={() => setActiveTab('schedule')}
+                      onClick={() => setActiveTab("schedule")}
                       className="w-full py-3 text-center text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors"
                     >
                       Ver todas las citas ({appointments.length})
@@ -232,14 +291,14 @@ export default function TechnicianDashboard() {
         )}
 
         {/* Schedule Tab */}
-        {activeTab === 'schedule' && (
+        {activeTab === "schedule" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-neutral-900">
                 Agenda del día
               </h2>
               <button
-                onClick={() => setActiveTab('book')}
+                onClick={() => setActiveTab("book")}
                 className="flex items-center space-x-2 px-4 py-2 bg-neutral-900 text-white rounded-xl font-semibold shadow-sm hover:bg-neutral-800 transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -256,7 +315,7 @@ export default function TechnicianDashboard() {
                   No hay citas programadas
                 </p>
                 <button
-                  onClick={() => setActiveTab('book')}
+                  onClick={() => setActiveTab("book")}
                   className="inline-flex items-center space-x-2 px-5 py-3 bg-neutral-900 text-white rounded-xl font-semibold shadow-sm hover:bg-neutral-800 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
@@ -271,11 +330,11 @@ export default function TechnicianDashboard() {
                     <div
                       key={appointment.id}
                       className={`bg-white rounded-2xl shadow-sm border p-5 ${
-                        appointment.status === 'COMPLETED'
-                          ? 'border-green-200 bg-green-50/30'
-                          : appointment.status === 'CANCELLED'
-                          ? 'border-red-200 bg-red-50/30'
-                          : 'border-neutral-200'
+                        appointment.status === "COMPLETED"
+                          ? "border-green-200 bg-green-50/30"
+                          : appointment.status === "CANCELLED"
+                          ? "border-red-200 bg-red-50/30"
+                          : "border-neutral-200"
                       }`}
                     >
                       <div className="space-y-4">
@@ -307,9 +366,12 @@ export default function TechnicianDashboard() {
                           <div className="flex items-center space-x-2 p-3 bg-neutral-50 rounded-xl">
                             <Clock className="w-5 h-5 text-neutral-600" />
                             <div>
-                              <p className="text-xs text-neutral-500">Horario</p>
+                              <p className="text-xs text-neutral-500">
+                                Horario
+                              </p>
                               <p className="text-sm font-semibold text-neutral-900">
-                                {appointment.start_time} - {appointment.end_time}
+                                {appointment.start_time} -{" "}
+                                {appointment.end_time}
                               </p>
                             </div>
                           </div>
@@ -318,7 +380,10 @@ export default function TechnicianDashboard() {
                             <div>
                               <p className="text-xs text-neutral-500">Total</p>
                               <p className="text-sm font-semibold text-neutral-900">
-                                ${appointment.total_amount ? appointment.total_amount.toFixed(2) : '0.00'}
+                                $
+                                {appointment.total_amount
+                                  ? appointment.total_amount.toFixed(2)
+                                  : "0.00"}
                               </p>
                             </div>
                           </div>
@@ -330,7 +395,8 @@ export default function TechnicianDashboard() {
                             Servicios
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {appointment.services && appointment.services.length > 0 ? (
+                            {appointment.services &&
+                            appointment.services.length > 0 ? (
                               appointment.services.map((service) => (
                                 <span
                                   key={service.id}
@@ -340,7 +406,9 @@ export default function TechnicianDashboard() {
                                 </span>
                               ))
                             ) : (
-                              <span className="text-sm text-neutral-400">Sin servicios</span>
+                              <span className="text-sm text-neutral-400">
+                                Sin servicios
+                              </span>
                             )}
                           </div>
                         </div>
@@ -348,24 +416,35 @@ export default function TechnicianDashboard() {
                         {/* Notes */}
                         {appointment.notes && (
                           <div className="p-3 bg-neutral-50 rounded-xl">
-                            <p className="text-xs text-neutral-500 mb-1">Notas</p>
-                            <p className="text-sm text-neutral-700">{appointment.notes}</p>
+                            <p className="text-xs text-neutral-500 mb-1">
+                              Notas
+                            </p>
+                            <p className="text-sm text-neutral-700">
+                              {appointment.notes}
+                            </p>
                           </div>
                         )}
 
                         {/* Actions */}
-                        {appointment.status === 'SCHEDULED' && (
+                        {appointment.status === "SCHEDULED" && (
                           <div className="space-y-2 pt-3 border-t border-neutral-100">
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleUpdateStatus(appointment.id, 'COMPLETED')}
+                                onClick={() =>
+                                  handleUpdateStatus(
+                                    appointment.id,
+                                    "COMPLETED"
+                                  )
+                                }
                                 className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold shadow-sm hover:bg-green-700 transition-colors"
                               >
                                 <CheckCircle className="w-4 h-4" />
                                 <span>Completar</span>
                               </button>
                               <button
-                                onClick={() => handleCancelAppointment(appointment.id)}
+                                onClick={() =>
+                                  handleCancelAppointment(appointment.id)
+                                }
                                 className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-white border border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
                               >
                                 <XCircle className="w-4 h-4" />
@@ -381,6 +460,18 @@ export default function TechnicianDashboard() {
                             </button>
                           </div>
                         )}
+
+                        {appointment.status === "COMPLETED" && (
+                          <div className="pt-3 border-t border-neutral-100">
+                            <button
+                              onClick={() => handleAddObservations(appointment)}
+                              className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-neutral-900 text-white rounded-xl font-semibold shadow-sm hover:bg-neutral-800 transition-colors"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span>Agregar Observaciones</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -390,7 +481,7 @@ export default function TechnicianDashboard() {
         )}
 
         {/* Book Tab */}
-        {activeTab === 'book' && (
+        {activeTab === "book" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="bg-white border border-neutral-200 rounded-2xl p-8 text-center">
               <div className="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -414,7 +505,7 @@ export default function TechnicianDashboard() {
         )}
 
         {/* Stats Tab */}
-        {activeTab === 'stats' && summary && (
+        {activeTab === "stats" && summary && (
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-lg font-semibold text-neutral-900">
               Estadísticas del día
@@ -462,7 +553,12 @@ export default function TechnicianDashboard() {
                   <div className="flex flex-col gap-2">
                     <DollarSign className="w-8 h-8 text-white/80" />
                     <div>
-                      <p className="text-4xl font-bold">${summary.total_earnings ? summary.total_earnings.toFixed(2) : '0.00'}</p>
+                      <p className="text-4xl font-bold">
+                        $
+                        {summary.total_earnings
+                          ? summary.total_earnings.toFixed(2)
+                          : "0.00"}
+                      </p>
                       <p className="text-sm text-white/70">Ganancias totales</p>
                     </div>
                   </div>
@@ -483,12 +579,25 @@ export default function TechnicianDashboard() {
         <BookAppointment
           onClose={() => setShowBookModal(false)}
           onSuccess={() => {
-            setShowBookModal(false)
-            loadData()
-            setActiveTab('schedule')
+            setShowBookModal(false);
+            loadData();
+            setActiveTab("schedule");
           }}
         />
       )}
+
+      {showObservationsModal && selectedAppointment && (
+        <AddObservationsModal
+          isOpen={showObservationsModal}
+          appointmentId={selectedAppointment.id}
+          clientName={selectedAppointment.client_name}
+          onClose={() => {
+            setShowObservationsModal(false);
+            setSelectedAppointment(null);
+          }}
+          onSuccess={handleObservationsSuccess}
+        />
+      )}
     </>
-  )
+  );
 }

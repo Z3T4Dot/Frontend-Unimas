@@ -1,18 +1,22 @@
-import { useState } from 'react'
-import { X, FileText, Package, Lightbulb, Camera, Loader2 } from 'lucide-react'
+"use client";
+
+import type React from "react";
+
+import { useState } from "react";
+import { X, FileText, Package, Lightbulb, Camera, Loader2 } from "lucide-react";
 
 interface AddObservationsModalProps {
-  isOpen: boolean
-  appointmentId: string
-  clientName: string
-  onClose: () => void
-  onSuccess: () => void
+  isOpen: boolean;
+  appointmentId: string;
+  clientName: string;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 interface ObservationsData {
-  observations: string
-  products_used: string
-  recommendations: string
+  observations: string;
+  products_used: string;
+  recommendations: string;
 }
 
 export default function AddObservationsModal({
@@ -23,79 +27,89 @@ export default function AddObservationsModal({
   onSuccess,
 }: AddObservationsModalProps) {
   const [formData, setFormData] = useState<ObservationsData>({
-    observations: '',
-    products_used: '',
-    recommendations: '',
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
+    observations: "",
+    products_used: "",
+    recommendations: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!formData.observations.trim()) {
-      setError('Las observaciones son obligatorias')
-      return
+      setError("Las observaciones son obligatorias");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:4000/api/appointments/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          appointment_id: appointmentId,
-          ...formData,
-        }),
-      })
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:4000/api/appointments/notes",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            appointment_id: appointmentId,
+            ...formData,
+          }),
+        }
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al guardar observaciones')
+        throw new Error(data.message || "Error al guardar observaciones");
       }
 
-      onSuccess()
-      handleClose()
+      onSuccess();
+      handleClose();
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleClose = () => {
     if (!isSubmitting) {
       setFormData({
-        observations: '',
-        products_used: '',
-        recommendations: '',
-      })
-      setError('')
-      onClose()
+        observations: "",
+        products_used: "",
+        recommendations: "",
+      });
+      setError("");
+      onClose();
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={handleClose}
+      />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn">
         {/* Header */}
         <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">Agregar Observaciones</h2>
-            <p className="text-sm text-neutral-300 mt-1">Cliente: {clientName}</p>
+            <h2 className="text-xl font-bold text-white">
+              Agregar Observaciones
+            </h2>
+            <p className="text-sm text-neutral-300 mt-1">
+              Cliente: {clientName}
+            </p>
           </div>
           <button
             onClick={handleClose}
@@ -107,7 +121,10 @@ export default function AddObservationsModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]"
+        >
           {/* Error Message */}
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -123,7 +140,9 @@ export default function AddObservationsModal({
             </label>
             <textarea
               value={formData.observations}
-              onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, observations: e.target.value })
+              }
               placeholder="Describe el estado del cliente, procedimientos realizados, resultados obtenidos..."
               rows={5}
               required
@@ -143,7 +162,9 @@ export default function AddObservationsModal({
             </label>
             <textarea
               value={formData.products_used}
-              onChange={(e) => setFormData({ ...formData, products_used: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, products_used: e.target.value })
+              }
               placeholder="Ej: Esmalte OPI Red, Lima profesional, Aceite de cutícula..."
               rows={3}
               disabled={isSubmitting}
@@ -162,7 +183,9 @@ export default function AddObservationsModal({
             </label>
             <textarea
               value={formData.recommendations}
-              onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, recommendations: e.target.value })
+              }
               placeholder="Ej: Aplicar crema hidratante diariamente, evitar agua caliente por 24h, agendar próxima cita en 2 semanas..."
               rows={3}
               disabled={isSubmitting}
@@ -212,5 +235,5 @@ export default function AddObservationsModal({
         </form>
       </div>
     </div>
-  )
+  );
 }
