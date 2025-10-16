@@ -325,4 +325,90 @@ export const appointmentsAPI = {
     const { data } = await api.post(`/appointments/${appointmentId}/send-whatsapp`)
     return data
   },
+
+  getStatistics: async (technicianId: string, period: 'day' | 'week' | 'month' | 'year' = 'week') => {
+    const { data } = await api.get(`/appointments/statistics/${technicianId}`, {
+      params: { period }
+    })
+    return data
+  },
+}
+
+// Appointment Notes
+export interface AppointmentNote {
+  id: string
+  appointment_id: string
+  client_id: string
+  client_name: string
+  technician_id: string
+  technician_name: string
+  observations: string
+  products_used?: string
+  recommendations?: string
+  before_photos?: string[]
+  after_photos?: string[]
+  appointment_date: string
+  appointment_start_time: string
+  services: string[]
+  total_amount?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ClientRecord {
+  client_id: string
+  client_name: string
+  client_email: string
+  client_phone?: string
+  total_appointments: number
+  total_notes: number
+  first_visit: string
+  last_visit: string
+  notes: AppointmentNote[]
+}
+
+export const appointmentNotesAPI = {
+  create: async (noteData: {
+    appointment_id: string
+    observations: string
+    products_used?: string
+    recommendations?: string
+  }) => {
+    const { data } = await api.post('/appointments/notes', noteData)
+    return data
+  },
+
+  getAllClientRecords: async () => {
+    const { data } = await api.get('/appointments/notes/records/all')
+    return data
+  },
+
+  getClientNotes: async (clientId: string) => {
+    const { data } = await api.get(`/appointments/notes/client/${clientId}`)
+    return data
+  },
+
+  getNoteById: async (noteId: string) => {
+    const { data } = await api.get(`/appointments/notes/${noteId}`)
+    return data
+  },
+
+  getNoteByAppointment: async (appointmentId: string) => {
+    const { data } = await api.get(`/appointments/${appointmentId}/note`)
+    return data
+  },
+
+  update: async (noteId: string, updates: {
+    observations?: string
+    products_used?: string
+    recommendations?: string
+  }) => {
+    const { data } = await api.put(`/appointments/notes/${noteId}`, updates)
+    return data
+  },
+
+  delete: async (noteId: string) => {
+    const { data } = await api.delete(`/appointments/notes/${noteId}`)
+    return data
+  },
 }

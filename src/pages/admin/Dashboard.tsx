@@ -13,6 +13,7 @@ import {
   Plus,
   XCircle,
   User as UserIcon,
+  FileText,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { appointmentsAPI, Appointment } from '../../lib/api'
@@ -22,11 +23,14 @@ import ManageUsers from '../../components/admin/ManageUsers'
 import ManageServices from '../../components/admin/ManageServices'
 import ManageAppointments from '../../components/admin/ManageAppointments'
 import Statistics from '../../components/admin/Statistics'
+import ClientRecords from '../../components/admin/ClientRecords'
 import BottomNavbar, { NavTab } from '../../components/ui/BottomNavbar'
 import BookAppointment from '../../components/admin/BookAppointment'
+import ConfirmModal from '../../components/common/ConfirmModal'
+import AddObservationsModal from '../../components/technician/AddObservationsModal'
 
 type ViewMode = 'admin' | 'tech'
-type AdminTabType = 'stats' | 'appointments' | 'users' | 'services'
+type AdminTabType = 'stats' | 'appointments' | 'users' | 'services' | 'records'
 type TechTabType = 'home' | 'schedule' | 'book' | 'stats'
 
 export default function AdminDashboard() {
@@ -41,6 +45,14 @@ export default function AdminDashboard() {
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
+
+  // Modal states
+  const [showConfirmComplete, setShowConfirmComplete] = useState(false)
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false)
+  const [showObservationsModal, setShowObservationsModal] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     if (viewMode === 'tech') {
@@ -72,29 +84,55 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleCompleteClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    setShowConfirmComplete(true)
+  }
+
+  const handleConfirmComplete = async () => {
+    if (!selectedAppointment) return
+
+    setIsProcessing(true)
     try {
-      await appointmentsAPI.update(id, { status })
-      loadTechData()
+      await appointmentsAPI.update(selectedAppointment.id, { status: 'COMPLETED' })
+      setShowConfirmComplete(false)
+
+      // Open observations modal after completing
+      setShowObservationsModal(true)
     } catch (error) {
-      console.error('Error updating status:', error)
-      alert('Error al actualizar el estado')
+      console.error('Error completing appointment:', error)
+      setIsProcessing(false)
     }
   }
 
-  const handleCancelAppointment = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de cancelar esta cita?')) return
+  const handleCancelClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    setCancelReason('')
+    setShowConfirmCancel(true)
+  }
 
-    const reason = prompt('Motivo de cancelación:')
-    if (!reason) return
+  const handleConfirmCancel = async () => {
+    if (!selectedAppointment || !cancelReason.trim()) return
 
+    setIsProcessing(true)
     try {
-      await appointmentsAPI.cancel(id, reason)
+      await appointmentsAPI.cancel(selectedAppointment.id, cancelReason)
+      setShowConfirmCancel(false)
+      setSelectedAppointment(null)
+      setCancelReason('')
       loadTechData()
     } catch (error) {
       console.error('Error canceling appointment:', error)
-      alert('Error al cancelar la cita')
+    } finally {
+      setIsProcessing(false)
     }
+  }
+
+  const handleObservationsSuccess = () => {
+    setShowObservationsModal(false)
+    setSelectedAppointment(null)
+    setIsProcessing(false)
+    loadTechData()
   }
 
   const scheduledAppointments = appointments.filter(a => a.status === 'SCHEDULED')
@@ -102,6 +140,7 @@ export default function AdminDashboard() {
   const adminNavTabs: NavTab[] = [
     { id: 'stats', label: 'Stats', icon: BarChart3 },
     { id: 'appointments', label: 'Citas', icon: Calendar },
+    { id: 'records', label: 'Fichas', icon: FileText },
     { id: 'users', label: 'Usuarios', icon: Users },
     { id: 'services', label: 'Servicios', icon: Sparkles },
   ]
@@ -180,6 +219,7 @@ export default function AdminDashboard() {
           <div className="animate-fadeIn">
             {adminActiveTab === 'stats' && <Statistics />}
             {adminActiveTab === 'appointments' && <ManageAppointments />}
+            {adminActiveTab === 'records' && <ClientRecords />}
             {adminActiveTab === 'users' && <ManageUsers />}
             {adminActiveTab === 'services' && <ManageServices />}
           </div>
@@ -406,14 +446,14 @@ export default function AdminDashboard() {
                                 {appointment.status === 'SCHEDULED' && (
                                   <div className="flex gap-2 pt-3 border-t border-neutral-100">
                                     <button
-                                      onClick={() => handleUpdateStatus(appointment.id, 'COMPLETED')}
+                                      onClick={() => handleCompleteClick(appointment)}
                                       className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold shadow-sm hover:bg-green-700 transition-colors"
                                     >
                                       <CheckCircle className="w-4 h-4" />
                                       <span>Completar</span>
                                     </button>
                                     <button
-                                      onClick={() => handleCancelAppointment(appointment.id)}
+                                      onClick={() => handleCancelClick(appointment)}
                                       className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-white border border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
                                     >
                                       <XCircle className="w-4 h-4" />
@@ -541,6 +581,81 @@ export default function AdminDashboard() {
           }}
         />
       )}
+
+      {/* Confirm Complete Modal */}
+      <ConfirmModal
+        isOpen={showConfirmComplete}
+        title="Completar Cita"
+        message={`¿Marcar la cita de ${selectedAppointment?.client_name} como completada? Se abrirá un formulario para agregar observaciones.`}
+        variant="success"
+        confirmText="Completar"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmComplete}
+        onCancel={() => {
+          setShowConfirmComplete(false)
+          setSelectedAppointment(null)
+        }}
+        isLoading={isProcessing}
+      />
+
+      {/* Confirm Cancel Modal with Reason Input */}
+      {showConfirmCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !isProcessing && setShowConfirmCancel(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
+            <h3 className="text-xl font-bold text-neutral-900 mb-2">Cancelar Cita</h3>
+            <p className="text-neutral-600 mb-4">
+              ¿Estás seguro de cancelar la cita de {selectedAppointment?.client_name}?
+            </p>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                Motivo de cancelación *
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ej: Cliente no se presentó, reprogramación solicitada..."
+                rows={3}
+                disabled={isProcessing}
+                className="w-full px-4 py-3 border-2 border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent resize-none disabled:bg-neutral-50"
+              />
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowConfirmCancel(false)
+                  setSelectedAppointment(null)
+                  setCancelReason('')
+                }}
+                disabled={isProcessing}
+                className="flex-1 px-4 py-3 bg-neutral-100 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-200 transition-colors disabled:opacity-50"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={isProcessing || !cancelReason.trim()}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? 'Cancelando...' : 'Confirmar Cancelación'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Observations Modal */}
+      <AddObservationsModal
+        isOpen={showObservationsModal}
+        appointmentId={selectedAppointment?.id || ''}
+        clientName={selectedAppointment?.client_name || ''}
+        onClose={() => {
+          setShowObservationsModal(false)
+          setSelectedAppointment(null)
+          setIsProcessing(false)
+        }}
+        onSuccess={handleObservationsSuccess}
+      />
     </>
   )
 }

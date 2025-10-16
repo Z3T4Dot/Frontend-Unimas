@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { X, Calendar, Clock, User, Sparkles, AlertCircle, Check, ChevronRight, UserPlus, Mail, Phone as PhoneIcon, Search } from 'lucide-react'
+import { X, Calendar, Clock, User, Sparkles, AlertCircle, Check, ChevronRight, UserPlus, Mail, Phone as PhoneIcon, Search, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import {
   servicesAPI,
+  categoriesAPI,
   usersAPI,
   appointmentsAPI,
   Service,
+  Category,
   User as UserType,
   TechnicianAvailability,
 } from '../../lib/api'
@@ -26,13 +28,14 @@ interface NewClientData {
 export default function BookAppointment({ onClose, onSuccess }: BookAppointmentProps) {
   const { user: currentUser } = useAuthStore()
   const isAdmin = currentUser?.role === 'ADMIN'
-  const isTechnician = currentUser?.role === 'TECHNICIAN'
   const [step, setStep] = useState(1)
 
   // Data states
+  const [categories, setCategories] = useState<Category[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [technicians, setTechnicians] = useState<UserType[]>([])
   const [clients, setClients] = useState<UserType[]>([])
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   // Selection states
   const [selectedServices, setSelectedServices] = useState<string[]>([])
@@ -59,6 +62,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
   const [error, setError] = useState('')
 
   useEffect(() => {
+    loadCategories()
     loadServices()
     loadClients()
     if (isAdmin) {
@@ -74,6 +78,17 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
       loadAvailability()
     }
   }, [selectedTechnician, selectedDate])
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getAll()
+      if (response.success) {
+        setCategories(response.data)
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error)
+    }
+  }
 
   const loadServices = async () => {
     try {
@@ -147,13 +162,23 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        slots.push({ start_time: startTime })
+        const endMinute = minute + 30
+        const endHourCalc = endMinute >= 60 ? hour + 1 : hour
+        const endMinuteCalc = endMinute >= 60 ? 0 : endMinute
+        const endTime = `${endHourCalc.toString().padStart(2, '0')}:${endMinuteCalc.toString().padStart(2, '0')}`
+        slots.push({ start_time: startTime, end_time: endTime })
       }
     }
 
     return {
       technician_id: selectedTechnician,
+      technician_name: technicians.find(t => t.id === selectedTechnician)?.name || '',
       date: selectedDate,
+      schedule: {
+        start_time: '09:00',
+        end_time: '18:00'
+      },
+      busy_slots: [],
       available_slots: slots,
     }
   }
