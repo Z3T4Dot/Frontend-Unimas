@@ -11,7 +11,6 @@ import {
   User,
   Home,
   BarChart3,
-  DollarSign,
   Plus,
   MessageCircle,
   FileText,
@@ -213,17 +212,14 @@ export default function TechnicianDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-5">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl shadow-md p-5">
                 <div className="flex flex-col gap-2">
-                  <DollarSign className="w-8 h-8 text-neutral-600" />
+                  <CheckCircle className="w-8 h-8 text-white/80" />
                   <div>
-                    <p className="text-3xl font-bold text-neutral-900">
-                      $
-                      {summary.total_earnings
-                        ? summary.total_earnings.toFixed(0)
-                        : "0"}
+                    <p className="text-3xl font-bold">
+                      {summary.completed_appointments || 0}
                     </p>
-                    <p className="text-sm text-neutral-500">Ganancias</p>
+                    <p className="text-sm text-white/70">Completadas</p>
                   </div>
                 </div>
               </div>
@@ -379,14 +375,22 @@ export default function TechnicianDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2 p-3 bg-neutral-50 rounded-xl">
-                            <DollarSign className="w-5 h-5 text-neutral-600" />
+                            <Clock className="w-5 h-5 text-neutral-600" />
                             <div>
-                              <p className="text-xs text-neutral-500">Total</p>
+                              <p className="text-xs text-neutral-500">Duración</p>
                               <p className="text-sm font-semibold text-neutral-900">
-                                $
-                                {appointment.total_amount
-                                  ? appointment.total_amount.toFixed(2)
-                                  : "0.00"}
+                                {appointment.services?.length || 0} servicio{appointment.services?.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-xl">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <div>
+                              <p className="text-xs text-green-600">Estado</p>
+                              <p className="text-sm font-semibold text-green-900">
+                                {appointment.status === 'SCHEDULED' ? 'Agendada' :
+                                 appointment.status === 'COMPLETED' ? 'Completada' :
+                                 appointment.status === 'CANCELLED' ? 'Cancelada' : appointment.status}
                               </p>
                             </div>
                           </div>
@@ -558,19 +562,24 @@ export default function TechnicianDashboard() {
                 </div>
               </div>
 
-              <div className="bg-neutral-900 text-white rounded-2xl shadow-md p-5 col-span-2">
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-md p-5 col-span-2">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-2">
-                    <DollarSign className="w-8 h-8 text-white/80" />
+                    <BarChart3 className="w-8 h-8 text-white/80" />
                     <div>
                       <p className="text-4xl font-bold">
-                        $
-                        {summary.total_earnings
-                          ? summary.total_earnings.toFixed(2)
-                          : "0.00"}
+                        {summary.total_appointments || 0}
                       </p>
-                      <p className="text-sm text-white/70">Ganancias totales</p>
+                      <p className="text-sm text-white/70">Total de citas</p>
                     </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold">
+                      {summary.completed_appointments && summary.total_appointments
+                        ? Math.round((summary.completed_appointments / summary.total_appointments) * 100)
+                        : 0}%
+                    </p>
+                    <p className="text-xs text-white/70">Tasa de éxito</p>
                   </div>
                 </div>
               </div>

@@ -157,12 +157,18 @@ export const usersAPI = {
 
   create: async (userData: {
     name: string
-    email: string
+    email?: string
     password: string
-    phone: string
+    phone?: string
     role: 'ADMIN' | 'TECHNICIAN' | 'CLIENT'
   }) => {
-    const { data } = await api.post('/users', userData)
+    // Clean up empty strings before sending to backend
+    const cleanedData = {
+      ...userData,
+      email: userData.email && userData.email.trim() !== '' ? userData.email : undefined,
+      phone: userData.phone && userData.phone.trim() !== '' ? userData.phone : undefined,
+    }
+    const { data } = await api.post('/users', cleanedData)
     return data
   },
 

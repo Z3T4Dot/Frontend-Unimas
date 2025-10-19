@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { authAPI } from '../../lib/api'
-import { UserPlus, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react'
+import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react'
+import PhoneInput from '../../components/common/PhoneInput'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -138,22 +139,13 @@ export default function Register() {
               <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
                 Teléfono
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Phone className="w-5 h-5 text-gray-400" />
-                </div>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all bg-white/50 backdrop-blur-sm hover:bg-white disabled:opacity-50"
-                  placeholder="+584241234567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(value) => setFormData({ ...formData, phone: value })}
+                required
+                disabled={loading}
+                className="bg-white/50 backdrop-blur-sm hover:bg-white"
+              />
             </div>
 
             <div>

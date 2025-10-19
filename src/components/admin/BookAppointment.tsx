@@ -13,6 +13,7 @@ import {
 } from '../../lib/api'
 import { format, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
+import PhoneInput from '../common/PhoneInput'
 
 interface BookAppointmentProps {
   onClose: () => void
@@ -745,12 +746,10 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                     <label className="block text-sm font-semibold text-neutral-900 mb-2">
                       Teléfono *
                     </label>
-                    <input
-                      type="tel"
-                      placeholder="Ej: 0999999999"
+                    <PhoneInput
                       value={newClientData.phone}
-                      onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
-                      className="input w-full"
+                      onChange={(value) => setNewClientData({ ...newClientData, phone: value })}
+                      required
                     />
                   </div>
 

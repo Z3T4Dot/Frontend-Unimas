@@ -14,18 +14,31 @@ export default function ManageCategories() {
     color: '#171717',
   })
 
-  const iconOptions = ['✨', '💅', '👣', '🪒', '👁️', '💆', '🌟', '💖', '🎨', '💄']
+  const iconOptions = [
+    '✨', '💅', '👣', '🪒', '👁️', '💆', '🌟', '💖', '🎨', '💄',
+    '💇', '👸', '🦋', '🌸', '💫', '🌺', '🧴', '✂️', '🎀', '🌹'
+  ]
   const colorOptions = [
-    '#171717', // Negro
-    '#dc2626', // Rojo
-    '#ea580c', // Naranja
-    '#ca8a04', // Amarillo
-    '#16a34a', // Verde
-    '#0891b2', // Cian
-    '#2563eb', // Azul
-    '#7c3aed', // Morado
-    '#c026d3', // Magenta
-    '#db2777', // Rosa
+    '#FF6B9D', // Rosa Pastel
+    '#C44569', // Rosa Intenso
+    '#FFA07A', // Salmón
+    '#FF7979', // Coral
+    '#6C5CE7', // Púrpura
+    '#A29BFE', // Lavanda
+    '#74B9FF', // Azul Cielo
+    '#0984E3', // Azul Océano
+    '#00B894', // Verde Menta
+    '#55EFC4', // Turquesa
+    '#FDCB6E', // Amarillo Sol
+    '#F39C12', // Naranja
+    '#E17055', // Terracota
+    '#D63031', // Rojo
+    '#FD79A8', // Rosa Chicle
+    '#FFEAA7', // Crema
+    '#DFE6E9', // Gris Claro
+    '#636E72', // Gris Oscuro
+    '#2D3436', // Negro Carbón
+    '#FFD700', // Dorado
   ]
 
   useEffect(() => {
@@ -166,13 +179,18 @@ export default function ManageCategories() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-2xl font-bold text-neutral-900 mb-6">
-              {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
-            </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col">
+            {/* Header - Fixed */}
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-2xl font-bold text-neutral-900">
+                {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+              </h3>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form Content - Scrollable */}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-700 mb-2">
@@ -205,23 +223,26 @@ export default function ManageCategories() {
               {/* Icon Selector */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                  Icono
+                  Icono (Elige un emoji)
                 </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {iconOptions.map((icon) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, icon })}
-                      className={`p-3 text-2xl rounded-xl border-2 transition-all ${
-                        formData.icon === icon
-                          ? 'border-neutral-900 bg-neutral-50'
-                          : 'border-neutral-200 hover:border-neutral-300'
-                      }`}
-                    >
-                      {icon}
-                    </button>
-                  ))}
+                <div className="border border-neutral-200 rounded-xl p-3 bg-gray-50">
+                  <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                    {iconOptions.map((icon) => (
+                      <button
+                        key={icon}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, icon })}
+                        className={`p-3 text-2xl rounded-lg border-2 transition-all hover:scale-110 ${
+                          formData.icon === icon
+                            ? 'border-pink-500 bg-pink-50 scale-110 shadow-md'
+                            : 'border-gray-200 hover:border-pink-300 bg-white'
+                        }`}
+                        title={icon}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -230,57 +251,80 @@ export default function ManageCategories() {
                 <label className="block text-sm font-semibold text-neutral-700 mb-2">
                   Color
                 </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, color })}
-                      className={`w-full h-12 rounded-xl border-2 transition-all ${
-                        formData.color === color
-                          ? 'border-neutral-900 scale-110'
-                          : 'border-neutral-200 hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: color }}
+                <div className="border border-neutral-200 rounded-xl p-3 bg-gray-50">
+                  <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, color })}
+                        className={`w-full h-10 rounded-lg border-2 transition-all hover:scale-110 ${
+                          formData.color === color
+                            ? 'border-neutral-900 scale-110 shadow-lg ring-2 ring-neutral-900 ring-offset-2'
+                            : 'border-gray-300 hover:border-gray-400 shadow-sm'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      O ingresa un color personalizado:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="#FF6B9D"
+                      pattern="^#[0-9A-Fa-f]{6}$"
                     />
-                  ))}
+                  </div>
                 </div>
               </div>
 
               {/* Preview */}
-              <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200">
-                <p className="text-xs font-semibold text-neutral-500 mb-2">Vista previa</p>
-                <div className="flex items-center space-x-3">
+              <div className="p-4 bg-gradient-to-br from-neutral-50 to-gray-100 rounded-xl border-2 border-neutral-200">
+                <p className="text-xs font-semibold text-neutral-500 mb-3 flex items-center">
+                  <span className="mr-2">✨</span> Vista previa
+                </p>
+                <div className="flex items-center space-x-4">
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+                    className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shadow-lg"
                     style={{ backgroundColor: formData.color }}
                   >
                     {formData.icon}
                   </div>
-                  <div>
-                    <p className="font-bold text-neutral-900">{formData.name || 'Nombre'}</p>
-                    <p className="text-sm text-neutral-600">
-                      {formData.description || 'Descripción'}
+                  <div className="flex-1">
+                    <p className="font-bold text-neutral-900 text-lg">
+                      {formData.name || 'Nombre de la categoría'}
+                    </p>
+                    <p className="text-sm text-neutral-600 mt-1">
+                      {formData.description || 'Descripción de la categoría'}
                     </p>
                   </div>
                 </div>
               </div>
+              </div>
 
-              {/* Actions */}
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseForm}
-                  className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-100 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all"
-                >
-                  {editingCategory ? 'Actualizar' : 'Crear'}
-                </button>
+              {/* Actions - Fixed Footer */}
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseForm}
+                    className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-700 rounded-xl font-semibold hover:bg-white transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                  >
+                    {editingCategory ? 'Actualizar' : 'Crear'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
