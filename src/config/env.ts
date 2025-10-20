@@ -15,5 +15,3 @@ export const ensureEnv = () => {
   if (!SUPABASE_URL) console.warn("⚠️ SUPABASE_URL missing");
   if (!SUPABASE_KEY) console.warn("⚠️ SUPABASE_KEY missing");
 };
-
-console.log("🌍 API_BASE_URL actual:", API_BASE_URL);
