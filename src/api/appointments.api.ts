@@ -1,4 +1,4 @@
-import api from './apiClient'
+import { api } from '@/lib/api'
 import type { ApiResponse, Appointment } from './types.api'
 
 

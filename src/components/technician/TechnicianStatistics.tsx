@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../../store/authStore'
-import apiClient from '../../api/apiClient'
+
 import {
   Calendar,
   CheckCircle,
@@ -16,6 +16,7 @@ import {
   Star,
   TrendingDown
 } from 'lucide-react'
+import { api } from '@/lib/api'
 
 interface TechnicianStats {
   period: string
@@ -50,7 +51,7 @@ export default function TechnicianStatistics() {
     setError('')
 
     try {
-      const response = await apiClient.get(
+      const response = await api.get(
         `/appointments/statistics/${user.id}?period=${period}`
       )
 

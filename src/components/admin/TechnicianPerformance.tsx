@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import apiClient from '../../api/apiClient'
 import {
   Users,
   DollarSign,
@@ -10,6 +9,7 @@ import {
   ChevronUp,
   Sparkles
 } from 'lucide-react'
+import { api } from '@/lib/api'
 
 interface TechnicianStat {
   technician_id: string
@@ -52,7 +52,7 @@ export default function TechnicianPerformance() {
     setError('')
 
     try {
-      const response = await apiClient.get(
+      const response = await api.get(
         `/appointments/statistics-all/technicians?period=${period}`
       )
 
