@@ -1,7 +1,7 @@
-import apiClient from '@/api/apiClient'
 import axios from 'axios'
+import { API_BASE_URL } from "@/config/env";
 
-const API_URL = apiClient.defaults.baseURL
+const API_URL = API_BASE_URL || 'http://localhost:8000/api'
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -9,6 +9,20 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Interceptor para añadir el token a cada request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 // Interceptor para manejar errores de autenticación
 api.interceptors.response.use(
