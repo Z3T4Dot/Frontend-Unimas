@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { appointmentsAPI, Appointment } from '../../lib/api'
-import { format } from 'date-fns'
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import ManageUsers from '../../components/admin/ManageUsers'
 import ManageServices from '../../components/admin/ManageServices'
@@ -32,6 +32,7 @@ import AddObservationsModal from '../../components/technician/AddObservationsMod
 type ViewMode = 'admin' | 'tech'
 type AdminTabType = 'stats' | 'appointments' | 'users' | 'services' | 'records'
 type TechTabType = 'home' | 'schedule' | 'book' | 'stats'
+type DateFilter = 'day' | 'week' | 'month'
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   // Tech view states
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [dateFilter, setDateFilter] = useState<DateFilter>('day')
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
@@ -58,15 +60,40 @@ export default function AdminDashboard() {
     if (viewMode === 'tech') {
       loadTechData()
     }
-  }, [selectedDate, viewMode])
+  }, [selectedDate, dateFilter, viewMode])
+
+  const getDateRange = () => {
+    const date = new Date(selectedDate)
+    switch (dateFilter) {
+      case 'week':
+        return {
+          start: format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+          end: format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+        }
+      case 'month':
+        return {
+          start: format(startOfMonth(date), 'yyyy-MM-dd'),
+          end: format(endOfMonth(date), 'yyyy-MM-dd'),
+        }
+      default: // day
+        return {
+          start: selectedDate,
+          end: selectedDate,
+        }
+    }
+  }
 
   const loadTechData = async () => {
     setLoading(true)
     try {
+      const dateRange = getDateRange()
+
       const [appointmentsRes, summaryRes] = await Promise.all([
         appointmentsAPI.getAll({
           technician_id: user?.id,
-          date: selectedDate,
+          date: dateFilter === 'day' ? selectedDate : undefined,
+          start_date: dateFilter !== 'day' ? dateRange.start : undefined,
+          end_date: dateFilter !== 'day' ? dateRange.end : undefined,
         }),
         appointmentsAPI.getTechnicianSummary(user!.id, selectedDate),
       ])
@@ -180,10 +207,28 @@ export default function AdminDashboard() {
               {viewMode === 'admin' ? 'Panel de Administración' : 'Panel de Técnico'}
             </h1>
             <p className="text-neutral-600">
-              {viewMode === 'admin'
-                ? 'Gestión completa del sistema Uñimas Spa'
-                : format(new Date(selectedDate), "d 'de' MMMM yyyy", { locale: es })
-              }
+              {viewMode === 'admin' ? (
+                'Gestión completa del sistema Uñimas Spa'
+              ) : (
+                <>
+                  {dateFilter === 'day' &&
+                    format(new Date(selectedDate), "d 'de' MMMM yyyy", {
+                      locale: es,
+                    })}
+                  {dateFilter === 'week' &&
+                    `Semana del ${format(
+                      startOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                      'd MMM',
+                      { locale: es }
+                    )} al ${format(
+                      endOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                      'd MMM yyyy',
+                      { locale: es }
+                    )}`}
+                  {dateFilter === 'month' &&
+                    format(new Date(selectedDate), 'MMMM yyyy', { locale: es })}
+                </>
+              )}
             </p>
           </div>
 
@@ -228,17 +273,89 @@ export default function AdminDashboard() {
         {/* Tech View */}
         {viewMode === 'tech' && (
           <>
-            {/* Date Selector */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-5">
-              <label className="block text-sm font-semibold text-neutral-900 mb-3">
-                Selecciona una fecha
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="input w-full"
-              />
+            {/* Date Filter & Selector */}
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-5 space-y-4">
+              {/* Filter Buttons */}
+              <div>
+                <label className="block text-sm font-semibold text-neutral-900 mb-3">
+                  Vista
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setDateFilter('day')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                      dateFilter === 'day'
+                        ? 'bg-neutral-900 text-white shadow-md'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    Día
+                  </button>
+                  <button
+                    onClick={() => setDateFilter('week')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                      dateFilter === 'week'
+                        ? 'bg-neutral-900 text-white shadow-md'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    Semana
+                  </button>
+                  <button
+                    onClick={() => setDateFilter('month')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                      dateFilter === 'month'
+                        ? 'bg-neutral-900 text-white shadow-md'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    Mes
+                  </button>
+                </div>
+              </div>
+
+              {/* Date Selector */}
+              <div>
+                <label className="block text-sm font-semibold text-neutral-900 mb-3">
+                  {dateFilter === 'day' && 'Selecciona un día'}
+                  {dateFilter === 'week' && 'Selecciona una semana'}
+                  {dateFilter === 'month' && 'Selecciona un mes'}
+                </label>
+                <input
+                  type={dateFilter === 'month' ? 'month' : 'date'}
+                  value={
+                    dateFilter === 'month'
+                      ? selectedDate.substring(0, 7) // YYYY-MM for month input
+                      : selectedDate
+                  }
+                  onChange={(e) => {
+                    if (dateFilter === 'month') {
+                      setSelectedDate(e.target.value + '-01') // Set to first day of month
+                    } else {
+                      setSelectedDate(e.target.value)
+                    }
+                  }}
+                  className="input w-full"
+                />
+                {dateFilter !== 'day' && (
+                  <p className="text-xs text-neutral-500 mt-2">
+                    {dateFilter === 'week' &&
+                      `${format(
+                        startOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                        'd MMM',
+                        { locale: es }
+                      )} - ${format(
+                        endOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                        'd MMM yyyy',
+                        { locale: es }
+                      )}`}
+                    {dateFilter === 'month' &&
+                      `${format(new Date(selectedDate), 'MMMM yyyy', {
+                        locale: es,
+                      })}`}
+                  </p>
+                )}
+              </div>
             </div>
 
             {loading ? (
