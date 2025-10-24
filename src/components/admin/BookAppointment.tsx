@@ -1,6 +1,20 @@
-import { useState, useEffect } from 'react'
-import { X, Calendar, Clock, User, Sparkles, AlertCircle, Check, ChevronRight, UserPlus, Mail, Phone as PhoneIcon, Search, ChevronDown } from 'lucide-react'
-import { useAuthStore } from '../../store/authStore'
+import { useState, useEffect } from "react";
+import {
+  X,
+  Calendar,
+  Clock,
+  User,
+  Sparkles,
+  AlertCircle,
+  Check,
+  ChevronRight,
+  UserPlus,
+  Mail,
+  Phone as PhoneIcon,
+  Search,
+  ChevronDown,
+} from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
 import {
   servicesAPI,
   categoriesAPI,
@@ -10,229 +24,294 @@ import {
   Category,
   User as UserType,
   TechnicianAvailability,
-} from '../../lib/api'
-import { format, addDays } from 'date-fns'
-import { es } from 'date-fns/locale'
-import PhoneInput from '../common/PhoneInput'
+  api,
+} from "../../lib/api";
+import { format, addDays } from "date-fns";
+import { es } from "date-fns/locale";
+import PhoneInput from "../common/PhoneInput";
 
 interface BookAppointmentProps {
-  onClose: () => void
-  onSuccess: () => void
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 interface NewClientData {
-  name: string
-  email: string
-  phone: string
+  name: string;
+  email: string;
+  phone: string;
 }
 
-export default function BookAppointment({ onClose, onSuccess }: BookAppointmentProps) {
-  const { user: currentUser } = useAuthStore()
-  const isAdmin = currentUser?.role === 'ADMIN'
-  const [step, setStep] = useState(1)
+export default function BookAppointment({
+  onClose,
+  onSuccess,
+}: BookAppointmentProps) {
+  const { user: currentUser } = useAuthStore();
+  const isAdmin = currentUser?.role === "ADMIN";
+  const [step, setStep] = useState(1);
 
   // Data states
-  const [categories, setCategories] = useState<Category[]>([])
-  const [services, setServices] = useState<Service[]>([])
-  const [technicians, setTechnicians] = useState<UserType[]>([])
-  const [clients, setClients] = useState<UserType[]>([])
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [technicians, setTechnicians] = useState<UserType[]>([]);
+  const [clients, setClients] = useState<UserType[]>([]);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // Selection states
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
-  const [selectedTechnician, setSelectedTechnician] = useState<string>('')
-  const [selectedClient, setSelectedClient] = useState<string>('')
-  const [selectedDate, setSelectedDate] = useState('')
-  const [selectedTime, setSelectedTime] = useState('')
-  const [notes, setNotes] = useState('')
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedTechnician, setSelectedTechnician] = useState<string>("");
+  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Client creation states
-  const [showNewClientForm, setShowNewClientForm] = useState(false)
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState<NewClientData>({
-    name: '',
-    email: '',
-    phone: '',
-  })
-  const [clientSearch, setClientSearch] = useState('')
-  const [creatingClient, setCreatingClient] = useState(false)
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [clientSearch, setClientSearch] = useState("");
+  const [creatingClient, setCreatingClient] = useState(false);
 
   // Other states
-  const [availability, setAvailability] = useState<TechnicianAvailability | null>(null)
-  const [usingDefaultSlots, setUsingDefaultSlots] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [availability, setAvailability] =
+    useState<TechnicianAvailability | null>(null);
+  const [usingDefaultSlots, setUsingDefaultSlots] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadCategories()
-    loadServices()
-    loadClients()
+    loadCategories();
+    loadServices();
+    loadClients();
     if (isAdmin) {
-      loadTechnicians()
+      loadTechnicians();
     } else {
       // Auto-select current user as technician
-      setSelectedTechnician(currentUser!.id)
+      setSelectedTechnician(currentUser!.id);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (selectedTechnician && selectedDate) {
-      loadAvailability()
+      loadAvailability();
     }
-  }, [selectedTechnician, selectedDate])
+  }, [selectedTechnician, selectedDate]);
 
   const loadCategories = async () => {
     try {
-      const response = await categoriesAPI.getAll()
+      const response = await categoriesAPI.getAll();
       if (response.success) {
-        setCategories(response.data)
+        setCategories(response.data);
       }
     } catch (error) {
-      console.error('Error loading categories:', error)
+      console.error("Error loading categories:", error);
     }
-  }
+  };
 
   const loadServices = async () => {
     try {
-      const response = await servicesAPI.getAll({ is_active: true })
+      const response = await servicesAPI.getAll({ is_active: true });
       if (response.success) {
-        setServices(response.data)
+        setServices(response.data);
       }
     } catch (error) {
-      console.error('Error loading services:', error)
+      console.error("Error loading services:", error);
     }
-  }
+  };
 
   const loadTechnicians = async () => {
     try {
-      const response = await usersAPI.getTechnicians()
+      const response = await usersAPI.getTechnicians();
       if (response.success) {
-        let techList = response.data
+        let techList = response.data;
 
         // Si el usuario actual es admin, agregarlo a la lista de técnicos si no está ya incluido
         if (isAdmin && currentUser) {
-          const adminAlreadyInList = techList.some((t: UserType) => t.id === currentUser.id)
+          const adminAlreadyInList = techList.some(
+            (t: UserType) => t.id === currentUser.id
+          );
           if (!adminAlreadyInList) {
             // Agregar al admin actual al inicio de la lista
-            techList = [currentUser, ...techList]
+            techList = [currentUser, ...techList];
           }
         }
 
-        setTechnicians(techList)
+        setTechnicians(techList);
       }
     } catch (error) {
-      console.error('Error loading technicians:', error)
+      console.error("Error loading technicians:", error);
     }
-  }
+  };
 
   const loadClients = async () => {
     try {
-      const response = await usersAPI.getClients()
+      const response = await usersAPI.getClients();
       if (response.success) {
-        setClients(response.data)
+        setClients(response.data);
       }
     } catch (error) {
-      console.error('Error loading clients:', error)
+      console.error("Error loading clients:", error);
     }
-  }
+  };
 
   const handleCreateClient = async () => {
     if (!newClientData.name || !newClientData.phone) {
-      setError('Nombre y teléfono son requeridos')
-      return
+      setError("Nombre y teléfono son requeridos");
+      return;
     }
 
-    setCreatingClient(true)
-    setError('')
+    setCreatingClient(true);
+    setError("");
 
     try {
       // Aquí deberías tener un endpoint para crear cliente
       // Por ahora, simularemos la creación
       const response = await usersAPI.create({
         ...newClientData,
-        role: 'CLIENT',
-        password: 'temporal123', // Contraseña temporal
-      })
+        role: "CLIENT",
+        password: "temporal123", // Contraseña temporal
+      });
 
       if (response.success) {
-        await loadClients() // Recargar clientes
-        setSelectedClient(response.data.id)
-        setShowNewClientForm(false)
-        setNewClientData({ name: '', email: '', phone: '' })
+        await loadClients(); // Recargar clientes
+        setSelectedClient(response.data.id);
+        setShowNewClientForm(false);
+        setNewClientData({ name: "", email: "", phone: "" });
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al crear cliente')
+      setError(err.response?.data?.error || "Error al crear cliente");
     } finally {
-      setCreatingClient(false)
+      setCreatingClient(false);
     }
-  }
+  };
 
   const generateDefaultAvailability = (): TechnicianAvailability => {
-    const slots = []
-    const startHour = 9
-    const endHour = 18
+    const slots = [];
+    const startHour = 9;
+    const endHour = 18;
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        const endMinute = minute + 30
-        const endHourCalc = endMinute >= 60 ? hour + 1 : hour
-        const endMinuteCalc = endMinute >= 60 ? 0 : endMinute
-        const endTime = `${endHourCalc.toString().padStart(2, '0')}:${endMinuteCalc.toString().padStart(2, '0')}`
-        slots.push({ start_time: startTime, end_time: endTime })
+        const startTime = `${hour.toString().padStart(2, "0")}:${minute
+          .toString()
+          .padStart(2, "0")}`;
+        const endMinute = minute + 30;
+        const endHourCalc = endMinute >= 60 ? hour + 1 : hour;
+        const endMinuteCalc = endMinute >= 60 ? 0 : endMinute;
+        const endTime = `${endHourCalc
+          .toString()
+          .padStart(2, "0")}:${endMinuteCalc.toString().padStart(2, "0")}`;
+        slots.push({ start_time: startTime, end_time: endTime });
       }
     }
 
     return {
       technician_id: selectedTechnician,
-      technician_name: technicians.find(t => t.id === selectedTechnician)?.name || '',
+      technician_name:
+        technicians.find((t) => t.id === selectedTechnician)?.name || "",
       date: selectedDate,
       schedule: {
-        start_time: '09:00',
-        end_time: '18:00'
+        start_time: "09:00",
+        end_time: "18:00",
       },
       busy_slots: [],
       available_slots: slots,
+    };
+  };
+
+  useEffect(() => {
+    if (selectedTechnician && selectedDate && selectedServices.length > 0) {
+      loadAvailability();
     }
-  }
+  }, [selectedTechnician, selectedDate, selectedServices]);
 
   const loadAvailability = async () => {
+    const totalDuration = getTotalDuration();
+
+    console.log("[v0] 🔍 Loading availability for:", {
+      technician_id: selectedTechnician,
+      date: selectedDate,
+      selected_services: selectedServices,
+      total_duration: totalDuration,
+    });
+
     try {
+      const serviceIds = selectedServices;
       const response = await appointmentsAPI.getTechnicianAvailability(
         selectedTechnician,
-        selectedDate
-      )
-      if (response.success && response.data && response.data.available_slots?.length > 0) {
-        setAvailability(response.data)
-        setUsingDefaultSlots(false)
+        selectedDate,
+        serviceIds,
+        totalDuration
+      );
+
+      console.log("[v0] 📥 Availability response:", response);
+
+      if (response.available_slots && response.available_slots.length > 0) {
+        console.log(
+          "[v0] ✅ Using API availability:",
+          response.available_slots.length,
+          "slots"
+        );
+        setAvailability({
+          technician_id: selectedTechnician,
+          technician_name: technicians.find((t) => t.id === selectedTechnician)?.name || "",
+          date: selectedDate,
+          schedule: {
+            start_time: response.available_slots[0]?.start_time || "09:00",
+            end_time: response.available_slots[response.available_slots.length - 1]?.end_time || "18:00",
+          },
+          busy_slots: response.busy_slots || [],
+          available_slots: response.available_slots,
+        });
+        setUsingDefaultSlots(false);
       } else {
-        setAvailability(generateDefaultAvailability())
-        setUsingDefaultSlots(true)
+        console.log("[v0] ⚠️ No API slots, using default availability");
+        const defaultAvail = generateDefaultAvailability();
+        console.log(
+          "[v0] 📋 Default slots generated:",
+          defaultAvail.available_slots.length
+        );
+        setAvailability(defaultAvail);
+        setUsingDefaultSlots(true);
       }
     } catch (error) {
-      console.error('Error loading availability, using default slots:', error)
-      setAvailability(generateDefaultAvailability())
-      setUsingDefaultSlots(true)
+      console.error("[v0] ❌ Error loading availability:", error);
+      const defaultAvail = generateDefaultAvailability();
+      console.log(
+        "[v0] 📋 Using default slots due to error:",
+        defaultAvail.available_slots.length
+      );
+      setAvailability(defaultAvail);
+      setUsingDefaultSlots(true);
     }
-  }
-
+  };
+  
   const handleSubmit = async () => {
-    if (!selectedServices.length || !selectedTechnician || !selectedClient || !selectedDate || !selectedTime) {
-      setError('Por favor completa todos los campos')
-      return
+    if (
+      !selectedServices.length ||
+      !selectedTechnician ||
+      !selectedClient ||
+      !selectedDate ||
+      !selectedTime
+    ) {
+      setError("Por favor completa todos los campos");
+      return;
     }
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
     try {
-      console.log('📤 Enviando datos de cita:', {
+      console.log("📤 Enviando datos de cita:", {
         client_id: selectedClient,
         technician_id: selectedTechnician,
         date: selectedDate,
         start_time: selectedTime,
         service_ids: selectedServices,
         notes,
-      })
+      });
 
       const response = await appointmentsAPI.create({
         client_id: selectedClient,
@@ -241,85 +320,92 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
         start_time: selectedTime,
         service_ids: selectedServices,
         notes,
-      })
+      });
 
-      console.log('✅ Respuesta del servidor:', response)
+      console.log("✅ Respuesta del servidor:", response);
 
       if (response.success) {
-        onSuccess()
+        onSuccess();
       }
     } catch (err: any) {
-      console.error('❌ Error al crear cita:', err)
-      console.error('Detalles del error:', err.response?.data)
+      console.error("❌ Error al crear cita:", err);
+      console.error("Detalles del error:", err.response?.data);
 
       // Mostrar mensaje de error más detallado
-      const errorMessage = err.response?.data?.error ||
-                          err.response?.data?.message ||
-                          err.message ||
-                          'Error al crear la cita'
-      setError(errorMessage)
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Error al crear la cita";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const getTotalPrice = () => {
     return services
       .filter((s) => selectedServices.includes(s.id))
-      .reduce((sum, s) => sum + s.price, 0)
-  }
+      .reduce((sum, s) => sum + s.price, 0);
+  };
 
   const getTotalDuration = () => {
     return services
       .filter((s) => selectedServices.includes(s.id))
-      .reduce((sum, s) => sum + s.duration_minutes, 0)
-  }
+      .reduce((sum, s) => sum + s.duration_minutes, 0);
+  };
 
   const getNextDays = (count: number) => {
-    const days = []
+    const days = [];
     for (let i = 0; i < count; i++) {
-      days.push(addDays(new Date(), i))
+      days.push(addDays(new Date(), i));
     }
-    return days
-  }
+    return days;
+  };
 
   // Calculate total steps: Services -> [Technician (admin only)] -> Client -> Date/Time -> Confirm
-  const totalSteps = isAdmin ? 5 : 4
+  const totalSteps = isAdmin ? 5 : 4;
 
   const getStepNumber = (stepName: string) => {
     if (isAdmin) {
-      return { services: 1, technician: 2, client: 3, datetime: 4, confirm: 5 }[stepName]
+      return { services: 1, technician: 2, client: 3, datetime: 4, confirm: 5 }[
+        stepName
+      ];
     } else {
-      return { services: 1, client: 2, datetime: 3, confirm: 4 }[stepName]
+      return { services: 1, client: 2, datetime: 3, confirm: 4 }[stepName];
     }
-  }
+  };
 
   const getCurrentStepName = () => {
     if (isAdmin) {
-      return ['services', 'technician', 'client', 'datetime', 'confirm'][step - 1]
+      return ["services", "technician", "client", "datetime", "confirm"][
+        step - 1
+      ];
     } else {
-      return ['services', 'client', 'datetime', 'confirm'][step - 1]
+      return ["services", "client", "datetime", "confirm"][step - 1];
     }
-  }
+  };
 
   const canProceed = () => {
-    const currentStepName = getCurrentStepName()
-    if (currentStepName === 'services') return selectedServices.length > 0
-    if (currentStepName === 'technician') return selectedTechnician !== ''
-    if (currentStepName === 'client') return selectedClient !== ''
-    if (currentStepName === 'datetime') return selectedDate !== '' && selectedTime !== ''
-    return true
-  }
+    const currentStepName = getCurrentStepName();
+    if (currentStepName === "services") return selectedServices.length > 0;
+    if (currentStepName === "technician") return selectedTechnician !== "";
+    if (currentStepName === "client") return selectedClient !== "";
+    if (currentStepName === "datetime")
+      return selectedDate !== "" && selectedTime !== "";
+    return true;
+  };
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-    client.phone?.includes(clientSearch) ||
-    client.email?.toLowerCase().includes(clientSearch.toLowerCase())
-  )
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      client.phone?.includes(clientSearch) ||
+      client.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  );
 
   const getSelectedClientData = () => {
-    return clients.find(c => c.id === selectedClient)
-  }
+    return clients.find((c) => c.id === selectedClient);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 md:p-4 animate-fadeIn">
@@ -328,7 +414,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
         <div className="sticky top-0 bg-neutral-900 text-white p-5 md:p-6 rounded-t-3xl md:rounded-t-2xl z-10">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold">Agendar Nueva Cita</h2>
+              <h2 className="text-xl md:text-2xl font-bold">
+                Agendar Nueva Cita
+              </h2>
               <p className="text-neutral-300 mt-1 text-sm md:text-base">
                 Paso {step} de {totalSteps}
               </p>
@@ -361,7 +449,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {/* Step 1: Select Services */}
-          {getCurrentStepName() === 'services' && (
+          {getCurrentStepName() === "services" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center">
@@ -381,17 +469,29 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
               <div className="space-y-3">
                 {categories.length > 0 ? (
                   categories.map((category) => {
-                    const categoryServices = services.filter(s => s.category_id === category.id)
-                    const isExpanded = expandedCategory === category.id
-                    const selectedCount = categoryServices.filter(s => selectedServices.includes(s.id)).length
+                    const categoryServices = services.filter(
+                      (s) => s.category_id === category.id
+                    );
+                    const isExpanded = expandedCategory === category.id;
+                    const selectedCount = categoryServices.filter((s) =>
+                      selectedServices.includes(s.id)
+                    ).length;
 
                     return (
-                      <div key={category.id} className="border-2 border-neutral-200 rounded-xl overflow-hidden">
+                      <div
+                        key={category.id}
+                        className="border-2 border-neutral-200 rounded-xl overflow-hidden"
+                      >
                         {/* Category Header */}
                         <button
-                          onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
+                          onClick={() =>
+                            setExpandedCategory(isExpanded ? null : category.id)
+                          }
                           className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-all"
-                          style={{ borderLeftColor: category.color, borderLeftWidth: '4px' }}
+                          style={{
+                            borderLeftColor: category.color,
+                            borderLeftWidth: "4px",
+                          }}
                         >
                           <div className="flex items-center space-x-3">
                             <div
@@ -401,9 +501,13 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                               {category.icon}
                             </div>
                             <div className="text-left">
-                              <h4 className="font-semibold text-neutral-900">{category.name}</h4>
+                              <h4 className="font-semibold text-neutral-900">
+                                {category.name}
+                              </h4>
                               {category.description && (
-                                <p className="text-sm text-neutral-600">{category.description}</p>
+                                <p className="text-sm text-neutral-600">
+                                  {category.description}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -415,7 +519,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                             )}
                             <ChevronDown
                               className={`w-5 h-5 text-neutral-400 transition-transform ${
-                                isExpanded ? 'transform rotate-180' : ''
+                                isExpanded ? "transform rotate-180" : ""
                               }`}
                             />
                           </div>
@@ -425,26 +529,37 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                         {isExpanded && (
                           <div className="p-4 bg-neutral-50 border-t border-neutral-200 space-y-2 animate-fadeIn">
                             {categoryServices.map((service) => {
-                              const isSelected = selectedServices.includes(service.id)
+                              const isSelected = selectedServices.includes(
+                                service.id
+                              );
                               return (
                                 <button
                                   key={service.id}
                                   onClick={() => {
                                     if (isSelected) {
-                                      setSelectedServices(selectedServices.filter((s) => s !== service.id))
+                                      setSelectedServices(
+                                        selectedServices.filter(
+                                          (s) => s !== service.id
+                                        )
+                                      );
                                     } else {
-                                      setSelectedServices([...selectedServices, service.id])
+                                      setSelectedServices([
+                                        ...selectedServices,
+                                        service.id,
+                                      ]);
                                     }
                                   }}
                                   className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                                     isSelected
-                                      ? 'border-neutral-900 bg-white shadow-sm'
-                                      : 'border-neutral-200 bg-white hover:border-neutral-300'
+                                      ? "border-neutral-900 bg-white shadow-sm"
+                                      : "border-neutral-200 bg-white hover:border-neutral-300"
                                   }`}
                                 >
                                   <div className="flex justify-between items-start">
                                     <div className="flex-1">
-                                      <h5 className="font-semibold text-neutral-900">{service.name}</h5>
+                                      <h5 className="font-semibold text-neutral-900">
+                                        {service.name}
+                                      </h5>
                                       {service.description && (
                                         <p className="text-sm text-neutral-600 mt-1 line-clamp-1">
                                           {service.description}
@@ -460,16 +575,20 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                                         </span>
                                       </div>
                                     </div>
-                                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ml-3 ${
-                                      isSelected
-                                        ? 'border-neutral-900 bg-neutral-900'
-                                        : 'border-neutral-300'
-                                    }`}>
-                                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                                    <div
+                                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ml-3 ${
+                                        isSelected
+                                          ? "border-neutral-900 bg-neutral-900"
+                                          : "border-neutral-300"
+                                      }`}
+                                    >
+                                      {isSelected && (
+                                        <Check className="w-4 h-4 text-white" />
+                                      )}
                                     </div>
                                   </div>
                                 </button>
-                              )
+                              );
                             })}
                             {categoryServices.length === 0 && (
                               <p className="text-center text-neutral-500 py-4 text-sm">
@@ -479,39 +598,48 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                           </div>
                         )}
                       </div>
-                    )
+                    );
                   })
                 ) : (
                   /* Fallback to list without categories */
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {services.map((service) => {
-                      const isSelected = selectedServices.includes(service.id)
+                      const isSelected = selectedServices.includes(service.id);
                       return (
                         <button
                           key={service.id}
                           onClick={() => {
                             if (isSelected) {
-                              setSelectedServices(selectedServices.filter((s) => s !== service.id))
+                              setSelectedServices(
+                                selectedServices.filter((s) => s !== service.id)
+                              );
                             } else {
-                              setSelectedServices([...selectedServices, service.id])
+                              setSelectedServices([
+                                ...selectedServices,
+                                service.id,
+                              ]);
                             }
                           }}
                           className={`text-left p-4 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-neutral-900 bg-neutral-50 shadow-md'
-                              : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm'
+                              ? "border-neutral-900 bg-neutral-50 shadow-md"
+                              : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="font-semibold text-neutral-900 flex-1">
                               {service.name}
                             </h4>
-                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                              isSelected
-                                ? 'border-neutral-900 bg-neutral-900'
-                                : 'border-neutral-300'
-                            }`}>
-                              {isSelected && <Check className="w-4 h-4 text-white" />}
+                            <div
+                              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? "border-neutral-900 bg-neutral-900"
+                                  : "border-neutral-300"
+                              }`}
+                            >
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-white" />
+                              )}
                             </div>
                           </div>
                           {service.description && (
@@ -520,11 +648,15 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                             </p>
                           )}
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-neutral-500">{service.duration_minutes} min</span>
-                            <span className="font-bold text-neutral-900">${service.price.toFixed(2)}</span>
+                            <span className="text-neutral-500">
+                              {service.duration_minutes} min
+                            </span>
+                            <span className="font-bold text-neutral-900">
+                              ${service.price.toFixed(2)}
+                            </span>
                           </div>
                         </button>
-                      )
+                      );
                     })}
                   </div>
                 )}
@@ -534,7 +666,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                 <div className="bg-neutral-900 text-white rounded-xl p-5 animate-scaleIn">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-neutral-300 mb-1">Total estimado</p>
+                      <p className="text-sm text-neutral-300 mb-1">
+                        Total estimado
+                      </p>
                       <p className="text-3xl font-bold">
                         ${getTotalPrice().toFixed(2)}
                       </p>
@@ -552,7 +686,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
           )}
 
           {/* Step 2 (Admin only): Select Technician */}
-          {getCurrentStepName() === 'technician' && (
+          {getCurrentStepName() === "technician" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center">
@@ -570,55 +704,67 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {technicians.map((tech) => {
-                  const isSelected = selectedTechnician === tech.id
-                  const isCurrentAdmin = tech.id === currentUser?.id
+                  const isSelected = selectedTechnician === tech.id;
+                  const isCurrentAdmin = tech.id === currentUser?.id;
                   return (
                     <button
                       key={tech.id}
                       onClick={() => setSelectedTechnician(tech.id)}
                       className={`text-left p-5 rounded-xl border-2 transition-all ${
                         isSelected
-                          ? 'border-neutral-900 bg-neutral-50 shadow-md'
-                          : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm'
+                          ? "border-neutral-900 bg-neutral-50 shadow-md"
+                          : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-center space-x-4">
-                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl ${
-                          isSelected ? 'bg-neutral-900' : 'bg-neutral-400'
-                        }`}>
+                        <div
+                          className={`w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl ${
+                            isSelected ? "bg-neutral-900" : "bg-neutral-400"
+                          }`}
+                        >
                           {tech.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-neutral-900">{tech.name}</h4>
+                            <h4 className="font-semibold text-neutral-900">
+                              {tech.name}
+                            </h4>
                             {isCurrentAdmin && (
                               <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-md border border-amber-200">
                                 Tú (Admin)
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-neutral-600">{tech.email}</p>
+                          <p className="text-sm text-neutral-600">
+                            {tech.email}
+                          </p>
                           {tech.phone && (
-                            <p className="text-xs text-neutral-500 mt-1">{tech.phone}</p>
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {tech.phone}
+                            </p>
                           )}
                         </div>
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                          isSelected
-                            ? 'border-neutral-900 bg-neutral-900'
-                            : 'border-neutral-300'
-                        }`}>
-                          {isSelected && <Check className="w-4 h-4 text-white" />}
+                        <div
+                          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                            isSelected
+                              ? "border-neutral-900 bg-neutral-900"
+                              : "border-neutral-300"
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-white" />
+                          )}
                         </div>
                       </div>
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
           )}
 
           {/* Step: Select or Create Client */}
-          {getCurrentStepName() === 'client' && (
+          {getCurrentStepName() === "client" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -638,12 +784,14 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                   onClick={() => setShowNewClientForm(!showNewClientForm)}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold transition-all ${
                     showNewClientForm
-                      ? 'bg-neutral-900 text-white'
-                      : 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200'
+                      ? "bg-neutral-900 text-white"
+                      : "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
                   }`}
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span className="text-sm">{showNewClientForm ? 'Cancelar' : 'Nuevo'}</span>
+                  <span className="text-sm">
+                    {showNewClientForm ? "Cancelar" : "Nuevo"}
+                  </span>
                 </button>
               </div>
 
@@ -664,21 +812,23 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                   {/* Client List */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                     {filteredClients.map((client) => {
-                      const isSelected = selectedClient === client.id
+                      const isSelected = selectedClient === client.id;
                       return (
                         <button
                           key={client.id}
                           onClick={() => setSelectedClient(client.id)}
                           className={`text-left p-4 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-neutral-900 bg-neutral-50 shadow-md'
-                              : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm'
+                              ? "border-neutral-900 bg-neutral-50 shadow-md"
+                              : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
                           }`}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0 ${
-                              isSelected ? 'bg-neutral-900' : 'bg-neutral-400'
-                            }`}>
+                            <div
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0 ${
+                                isSelected ? "bg-neutral-900" : "bg-neutral-400"
+                              }`}
+                            >
                               {client.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -698,16 +848,20 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                                 </p>
                               )}
                             </div>
-                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                              isSelected
-                                ? 'border-neutral-900 bg-neutral-900'
-                                : 'border-neutral-300'
-                            }`}>
-                              {isSelected && <Check className="w-4 h-4 text-white" />}
+                            <div
+                              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                                isSelected
+                                  ? "border-neutral-900 bg-neutral-900"
+                                  : "border-neutral-300"
+                              }`}
+                            >
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-white" />
+                              )}
                             </div>
                           </div>
                         </button>
-                      )
+                      );
                     })}
                   </div>
 
@@ -727,7 +881,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
               ) : (
                 /* New Client Form */
                 <div className="bg-neutral-50 rounded-2xl p-6 space-y-4">
-                  <h4 className="font-semibold text-neutral-900 mb-4">Crear nuevo cliente</h4>
+                  <h4 className="font-semibold text-neutral-900 mb-4">
+                    Crear nuevo cliente
+                  </h4>
 
                   <div>
                     <label className="block text-sm font-semibold text-neutral-900 mb-2">
@@ -737,7 +893,12 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                       type="text"
                       placeholder="Ej: María García"
                       value={newClientData.name}
-                      onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+                      onChange={(e) =>
+                        setNewClientData({
+                          ...newClientData,
+                          name: e.target.value,
+                        })
+                      }
                       className="input w-full"
                     />
                   </div>
@@ -748,7 +909,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                     </label>
                     <PhoneInput
                       value={newClientData.phone}
-                      onChange={(value) => setNewClientData({ ...newClientData, phone: value })}
+                      onChange={(value) =>
+                        setNewClientData({ ...newClientData, phone: value })
+                      }
                       required
                     />
                   </div>
@@ -761,14 +924,23 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                       type="email"
                       placeholder="Ej: maria@example.com"
                       value={newClientData.email}
-                      onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                      onChange={(e) =>
+                        setNewClientData({
+                          ...newClientData,
+                          email: e.target.value,
+                        })
+                      }
                       className="input w-full"
                     />
                   </div>
 
                   <button
                     onClick={handleCreateClient}
-                    disabled={creatingClient || !newClientData.name || !newClientData.phone}
+                    disabled={
+                      creatingClient ||
+                      !newClientData.name ||
+                      !newClientData.phone
+                    }
                     className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-xl hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creatingClient ? (
@@ -786,7 +958,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
           )}
 
           {/* Step: Select Date & Time */}
-          {getCurrentStepName() === 'datetime' && (
+          {getCurrentStepName() === "datetime" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center">
@@ -809,34 +981,37 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                 </label>
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
                   {getNextDays(14).map((day) => {
-                    const dateStr = format(day, 'yyyy-MM-dd')
-                    const isSelected = selectedDate === dateStr
-                    const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr
+                    const dateStr = format(day, "yyyy-MM-dd");
+                    const isSelected = selectedDate === dateStr;
+                    const isToday =
+                      format(new Date(), "yyyy-MM-dd") === dateStr;
                     return (
                       <button
                         key={dateStr}
                         onClick={() => {
-                          setSelectedDate(dateStr)
-                          setSelectedTime('')
+                          setSelectedDate(dateStr);
+                          setSelectedTime("");
                         }}
                         className={`p-3 rounded-xl text-center transition-all ${
                           isSelected
-                            ? 'bg-neutral-900 text-white shadow-md'
-                            : 'bg-white border-2 border-neutral-200 hover:border-neutral-300 text-neutral-900'
+                            ? "bg-neutral-900 text-white shadow-md"
+                            : "bg-white border-2 border-neutral-200 hover:border-neutral-300 text-neutral-900"
                         }`}
                       >
                         <div className="text-xs font-medium mb-1">
-                          {format(day, 'EEE', { locale: es })}
+                          {format(day, "EEE", { locale: es })}
                         </div>
-                        <div className="text-xl font-bold">{format(day, 'd')}</div>
+                        <div className="text-xl font-bold">
+                          {format(day, "d")}
+                        </div>
                         <div className="text-xs mt-1 opacity-70">
-                          {format(day, 'MMM', { locale: es })}
+                          {format(day, "MMM", { locale: es })}
                         </div>
                         {isToday && !isSelected && (
                           <div className="mt-1 w-1.5 h-1.5 bg-neutral-400 rounded-full mx-auto" />
                         )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -867,21 +1042,27 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                   ) : (
                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                       {availability.available_slots.map((slot, idx) => {
-                        const isSelected = selectedTime === slot.start_time
+                        const isSelected = selectedTime === slot.start_time;
                         return (
                           <button
                             key={idx}
                             onClick={() => setSelectedTime(slot.start_time)}
                             className={`p-3 rounded-xl text-center transition-all ${
                               isSelected
-                                ? 'bg-neutral-900 text-white shadow-md'
-                                : 'bg-white border-2 border-neutral-200 hover:border-neutral-300 text-neutral-900'
+                                ? "bg-neutral-900 text-white shadow-md"
+                                : "bg-white border-2 border-neutral-200 hover:border-neutral-300 text-neutral-900"
                             }`}
                           >
-                            <Clock className={`w-4 h-4 mx-auto mb-1 ${isSelected ? 'text-white' : 'text-neutral-400'}`} />
-                            <div className="text-sm font-semibold">{slot.start_time}</div>
+                            <Clock
+                              className={`w-4 h-4 mx-auto mb-1 ${
+                                isSelected ? "text-white" : "text-neutral-400"
+                              }`}
+                            />
+                            <div className="text-sm font-semibold">
+                              {slot.start_time}
+                            </div>
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   )}
@@ -891,7 +1072,7 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
           )}
 
           {/* Step: Confirm */}
-          {getCurrentStepName() === 'confirm' && (
+          {getCurrentStepName() === "confirm" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -918,9 +1099,13 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                       {getSelectedClientData()?.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-neutral-900">{getSelectedClientData()?.name}</p>
+                      <p className="font-semibold text-neutral-900">
+                        {getSelectedClientData()?.name}
+                      </p>
                       {getSelectedClientData()?.phone && (
-                        <p className="text-sm text-neutral-600">{getSelectedClientData()?.phone}</p>
+                        <p className="text-sm text-neutral-600">
+                          {getSelectedClientData()?.phone}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -952,7 +1137,10 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                       Técnico asignado
                     </p>
                     <p className="text-lg font-semibold text-neutral-900">
-                      {technicians.find((t) => t.id === selectedTechnician)?.name}
+                      {
+                        technicians.find((t) => t.id === selectedTechnician)
+                          ?.name
+                      }
                     </p>
                   </div>
                 )}
@@ -963,7 +1151,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
                     Fecha y hora
                   </p>
                   <p className="text-lg font-semibold text-neutral-900 capitalize">
-                    {format(new Date(selectedDate), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+                    {format(new Date(selectedDate), "EEEE, d 'de' MMMM yyyy", {
+                      locale: es,
+                    })}
                   </p>
                   <p className="text-neutral-600 mt-1">a las {selectedTime}</p>
                 </div>
@@ -993,7 +1183,10 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
 
               {/* Notes */}
               <div>
-                <label htmlFor="notes" className="block text-sm font-semibold text-neutral-900 mb-3">
+                <label
+                  htmlFor="notes"
+                  className="block text-sm font-semibold text-neutral-900 mb-3"
+                >
                   Notas adicionales (opcional)
                 </label>
                 <textarea
@@ -1014,39 +1207,39 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
           <button
             onClick={() => {
               if (step === 1) {
-                onClose()
+                onClose();
               } else {
-                setStep(step - 1)
-                setError('')
-                setShowNewClientForm(false)
+                setStep(step - 1);
+                setError("");
+                setShowNewClientForm(false);
               }
             }}
             className="flex-1 md:flex-initial px-6 py-3 bg-white border-2 border-neutral-300 text-neutral-700 font-semibold rounded-xl hover:bg-neutral-50 transition-all active:scale-95"
             disabled={loading}
           >
-            {step === 1 ? 'Cancelar' : 'Atrás'}
+            {step === 1 ? "Cancelar" : "Atrás"}
           </button>
 
           <button
             onClick={() => {
               if (step === totalSteps) {
-                handleSubmit()
+                handleSubmit();
               } else {
                 if (!canProceed()) {
-                  const currentStepName = getCurrentStepName()
-                  if (currentStepName === 'services') {
-                    setError('Selecciona al menos un servicio')
-                  } else if (currentStepName === 'technician') {
-                    setError('Selecciona un técnico')
-                  } else if (currentStepName === 'client') {
-                    setError('Selecciona un cliente')
-                  } else if (currentStepName === 'datetime') {
-                    setError('Selecciona fecha y hora')
+                  const currentStepName = getCurrentStepName();
+                  if (currentStepName === "services") {
+                    setError("Selecciona al menos un servicio");
+                  } else if (currentStepName === "technician") {
+                    setError("Selecciona un técnico");
+                  } else if (currentStepName === "client") {
+                    setError("Selecciona un cliente");
+                  } else if (currentStepName === "datetime") {
+                    setError("Selecciona fecha y hora");
                   }
-                  return
+                  return;
                 }
-                setError('')
-                setStep(step + 1)
+                setError("");
+                setStep(step + 1);
               }
             }}
             className="flex-1 md:flex-initial px-6 py-3 bg-neutral-900 text-white font-semibold rounded-xl hover:bg-neutral-800 shadow-md transition-all active:scale-95 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1056,7 +1249,9 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
               <div className="loader w-5 h-5 border-2 border-white/30 border-t-white"></div>
             ) : (
               <>
-                <span>{step === totalSteps ? 'Confirmar Cita' : 'Siguiente'}</span>
+                <span>
+                  {step === totalSteps ? "Confirmar Cita" : "Siguiente"}
+                </span>
                 {step !== totalSteps && <ChevronRight className="w-5 h-5" />}
               </>
             )}
@@ -1064,5 +1259,5 @@ export default function BookAppointment({ onClose, onSuccess }: BookAppointmentP
         </div>
       </div>
     </div>
-  )
+  );
 }

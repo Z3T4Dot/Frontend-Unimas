@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, CheckCircle2, AlertCircle, Sparkles, User } from 'lucide-react'
 import { servicesAPI, usersAPI, Service, User as UserType } from '../../lib/api'
+import { useAuthStore } from '../../store/authStore'
 
 interface AssignServicesProps {
   onClose: () => void
@@ -8,6 +9,7 @@ interface AssignServicesProps {
 }
 
 export default function AssignServices({ onClose, onSuccess }: AssignServicesProps) {
+  const { user: currentUser } = useAuthStore()
   const [technicians, setTechnicians] = useState<UserType[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [selectedTechnician, setSelectedTechnician] = useState<string>('')
@@ -37,7 +39,19 @@ export default function AssignServices({ onClose, onSuccess }: AssignServicesPro
       ])
 
       if (techsResponse.success) {
-        setTechnicians(techsResponse.data)
+        let techList = techsResponse.data
+
+        // Add current admin to the list if not already included
+        if (currentUser && currentUser.role === 'ADMIN') {
+          const adminAlreadyInList = techList.some(
+            (t: UserType) => t.id === currentUser.id
+          )
+          if (!adminAlreadyInList) {
+            techList = [currentUser, ...techList]
+          }
+        }
+
+        setTechnicians(techList)
       }
       if (servicesResponse.success) {
         setServices(servicesResponse.data)

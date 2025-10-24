@@ -16,7 +16,7 @@ import {
   FileText,
   Users,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import BottomNavbar, { type NavTab } from "../../components/ui/BottomNavbar";
 import BookAppointment from "../../components/admin/BookAppointment";
@@ -25,12 +25,15 @@ import ClientHistory from "../../components/technician/ClientHistory";
 
 type TechTab = "home" | "schedule" | "book" | "clients" | "stats";
 
+type DateFilter = "day" | "week" | "month";
+
 export default function TechnicianDashboard() {
   const { user } = useAuthStore();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), "yyyy-MM-dd")
   );
+  const [dateFilter, setDateFilter] = useState<DateFilter>("day");
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TechTab>("home");
@@ -41,15 +44,40 @@ export default function TechnicianDashboard() {
 
   useEffect(() => {
     loadData();
-  }, [selectedDate]);
+  }, [selectedDate, dateFilter]);
+
+  const getDateRange = () => {
+    const date = new Date(selectedDate);
+    switch (dateFilter) {
+      case "week":
+        return {
+          start: format(startOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+          end: format(endOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        };
+      case "month":
+        return {
+          start: format(startOfMonth(date), "yyyy-MM-dd"),
+          end: format(endOfMonth(date), "yyyy-MM-dd"),
+        };
+      default: // day
+        return {
+          start: selectedDate,
+          end: selectedDate,
+        };
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
+      const dateRange = getDateRange();
+
       const [appointmentsRes, summaryRes] = await Promise.all([
         appointmentsAPI.getAll({
           technician_id: user?.id,
-          date: selectedDate,
+          date: dateFilter === "day" ? selectedDate : undefined,
+          start_date: dateFilter !== "day" ? dateRange.start : undefined,
+          end_date: dateFilter !== "day" ? dateRange.end : undefined,
         }),
         appointmentsAPI.getTechnicianSummary(user!.id, selectedDate),
       ]);
@@ -178,21 +206,108 @@ export default function TechnicianDashboard() {
             Panel de Técnico
           </h1>
           <p className="text-neutral-600">
-            {format(new Date(selectedDate), "d 'de' MMMM yyyy", { locale: es })}
+            {dateFilter === "day" &&
+              format(new Date(selectedDate), "d 'de' MMMM yyyy", {
+                locale: es,
+              })}
+            {dateFilter === "week" &&
+              `Semana del ${format(
+                startOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                "d MMM",
+                { locale: es }
+              )} al ${format(
+                endOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                "d MMM yyyy",
+                { locale: es }
+              )}`}
+            {dateFilter === "month" &&
+              format(new Date(selectedDate), "MMMM yyyy", { locale: es })}
           </p>
         </div>
 
-        {/* Date Selector */}
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-5">
-          <label className="block text-sm font-semibold text-neutral-900 mb-3">
-            Selecciona una fecha
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="input w-full"
-          />
+        {/* Date Filter & Selector */}
+        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-5 space-y-4">
+          {/* Filter Buttons */}
+          <div>
+            <label className="block text-sm font-semibold text-neutral-900 mb-3">
+              Vista
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDateFilter("day")}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  dateFilter === "day"
+                    ? "bg-neutral-900 text-white shadow-md"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                }`}
+              >
+                Día
+              </button>
+              <button
+                onClick={() => setDateFilter("week")}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  dateFilter === "week"
+                    ? "bg-neutral-900 text-white shadow-md"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                }`}
+              >
+                Semana
+              </button>
+              <button
+                onClick={() => setDateFilter("month")}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  dateFilter === "month"
+                    ? "bg-neutral-900 text-white shadow-md"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                }`}
+              >
+                Mes
+              </button>
+            </div>
+          </div>
+
+          {/* Date Selector */}
+          <div>
+            <label className="block text-sm font-semibold text-neutral-900 mb-3">
+              {dateFilter === "day" && "Selecciona un día"}
+              {dateFilter === "week" && "Selecciona una semana"}
+              {dateFilter === "month" && "Selecciona un mes"}
+            </label>
+            <input
+              type={dateFilter === "month" ? "month" : "date"}
+              value={
+                dateFilter === "month"
+                  ? selectedDate.substring(0, 7) // YYYY-MM for month input
+                  : selectedDate
+              }
+              onChange={(e) => {
+                if (dateFilter === "month") {
+                  setSelectedDate(e.target.value + "-01"); // Set to first day of month
+                } else {
+                  setSelectedDate(e.target.value);
+                }
+              }}
+              className="input w-full"
+            />
+            {dateFilter !== "day" && (
+              <p className="text-xs text-neutral-500 mt-2">
+                {dateFilter === "week" &&
+                  `${format(
+                    startOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                    "d MMM",
+                    { locale: es }
+                  )} - ${format(
+                    endOfWeek(new Date(selectedDate), { weekStartsOn: 1 }),
+                    "d MMM yyyy",
+                    { locale: es }
+                  )}`}
+                {dateFilter === "month" &&
+                  `${format(new Date(selectedDate), "MMMM yyyy", {
+                    locale: es,
+                  })}`}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Home Tab */}

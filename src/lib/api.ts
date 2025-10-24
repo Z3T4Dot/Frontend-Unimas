@@ -94,9 +94,10 @@ export interface Appointment {
   cancellation_reason?: string
 }
 
-export interface AvailabilitySlot {
-  start_time: string
-  end_time: string
+export interface AvailableSlot {
+  start_time: string // HH:mm format
+  end_time: string // HH:mm format
+  duration_minutes?: number // Optional - calculated from start_time and end_time
 }
 
 export interface TechnicianAvailability {
@@ -112,7 +113,7 @@ export interface TechnicianAvailability {
     end_time: string
     appointment_id: string
   }[]
-  available_slots: AvailabilitySlot[]
+  available_slots: AvailableSlot[]
 }
 
 // API Functions
@@ -272,6 +273,8 @@ export const categoriesAPI = {
 export const appointmentsAPI = {
   getAll: async (params?: {
     date?: string
+    start_date?: string
+    end_date?: string
     status?: string
     technician_id?: string
     client_id?: string
@@ -311,18 +314,41 @@ export const appointmentsAPI = {
   },
 
   cancel: async (id: string, reason: string) => {
-    const { data } = await api.delete(`/appointments/${id}`, {
-      data: { cancellation_reason: reason },
+    const { data } = await api.patch(`/appointments/${id}/cancel`, {
+      cancellation_reason: reason,
     })
     return data
   },
 
-  getTechnicianAvailability: async (technicianId: string, date: string) => {
-    const { data } = await api.get(
-      `/appointments/technician/${technicianId}/availability`,
-      { params: { date } }
-    )
-    return data
+  getTechnicianAvailability: async (
+    technicianId: string,
+    date: string,
+    serviceIds: string[],
+    totalDuration: number, // Duration in minutes
+  ): Promise<{ available_slots: AvailableSlot[]; busy_slots: any[] }> => {
+    console.log("[v0] API: Getting technician availability", {
+      technicianId,
+      date,
+      serviceIds,
+      totalDuration
+    })
+
+    // Use the correct backend endpoint: /api/appointments/available-slots/:technicianId
+    const { data } = await api.get(`/appointments/available-slots/${technicianId}`, {
+      params: {
+        date,
+        duration: totalDuration,
+      }
+    })
+
+    console.log("[v0] API: Availability response from backend:", data)
+
+    // Backend returns: { success: true, data: AvailableSlot[] }
+    // We need to wrap it in the expected format
+    return {
+      available_slots: data.data || data,
+      busy_slots: []
+    }
   },
 
   getTechnicianSummary: async (technicianId: string, date: string) => {

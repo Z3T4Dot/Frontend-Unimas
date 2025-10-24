@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, CheckCircle2, AlertCircle, Clock, User, Plus, Trash2 } from 'lucide-react'
 import { usersAPI, User as UserType, api } from '../../lib/api'
+import { useAuthStore } from '../../store/authStore'
 
 interface ManageSchedulesProps {
   onClose: () => void
@@ -26,6 +27,7 @@ const DAYS_OF_WEEK = [
 ]
 
 export default function ManageSchedules({ onClose, onSuccess }: ManageSchedulesProps) {
+  const { user: currentUser } = useAuthStore()
   const [technicians, setTechnicians] = useState<UserType[]>([])
   const [selectedTechnician, setSelectedTechnician] = useState<string>('')
   const [schedules, setSchedules] = useState<Schedule[]>([])
@@ -49,7 +51,19 @@ export default function ManageSchedules({ onClose, onSuccess }: ManageSchedulesP
     try {
       const response = await usersAPI.getTechnicians()
       if (response.success) {
-        setTechnicians(response.data)
+        let techList = response.data
+
+        // Add current admin to the list if not already included
+        if (currentUser && currentUser.role === 'ADMIN') {
+          const adminAlreadyInList = techList.some(
+            (t: UserType) => t.id === currentUser.id
+          )
+          if (!adminAlreadyInList) {
+            techList = [currentUser, ...techList]
+          }
+        }
+
+        setTechnicians(techList)
       }
     } catch (err) {
       console.error('Error loading technicians:', err)
